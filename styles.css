@@ -1,0 +1,167 @@
+/* ============================================
+   TIENDA LEÓN — Identidad visual
+   ============================================ */
+
+:root {
+  --onyx: #0B0B0F;
+  --surface: #16151B;
+  --surface2: #1E1C24;
+  --gold: #C9A227;
+  --gold-bright: #E8C468;
+  --copper: #A85C32;
+  --bone: #F5F1E8;
+  --muted: #9C978D;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) var(--surface);
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 999px; }
+
+html { scroll-behavior: smooth; }
+
+/* ---------- Foco accesible ---------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Marca / rayos de melena en el header ---------- */
+.mane-mark { position: relative; }
+.mane-rays { transform-origin: 30px 30px; animation: mane-spin 30s linear infinite; }
+
+@keyframes mane-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Elemento distintivo del hero: rayos radiales dorados ---------- */
+.hero-rays {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-conic-gradient(
+      from 0deg,
+      rgba(201, 162, 39, 0.05) 0deg 3deg,
+      transparent 3deg 12deg
+    );
+  mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-rays::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(201,162,39,0.12), transparent 55%);
+}
+
+/* ---------- Iconos sociales ---------- */
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.social-icon:hover {
+  color: var(--gold-bright);
+  border-color: var(--gold);
+  background-color: rgba(201,162,39,0.08);
+}
+
+/* ---------- Tarjeta de producto ---------- */
+.product-card {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(201,162,39,0.45);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+
+.product-card__img-wrap {
+  aspect-ratio: 3 / 4;
+  background: #0F0E12;
+  overflow: hidden;
+}
+.product-card__img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+}
+.product-card:hover .product-card__img-wrap img { transform: scale(1.06); }
+
+.size-pill {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  border: 1px solid rgba(201,162,39,0.35);
+  background: rgba(201,162,39,0.08);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+}
+
+/* ---------- Carrito: drawer abierto ---------- */
+.cart-open { transform: translateX(0) !important; }
+
+.cart-line-item {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.cart-line-item img {
+  width: 64px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #0F0E12;
+}
+
+.qty-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: var(--bone);
+  transition: border-color .2s ease, color .2s ease;
+}
+.qty-btn:hover { border-color: var(--gold); color: var(--gold-bright); }
+
+/* ---------- Animaciones de entrada ---------- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up .45s ease both; }
+
+/* ---------- Movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
