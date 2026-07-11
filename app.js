@@ -4,16 +4,15 @@
    ============================================ */
 
 /* ---------- 1. CONFIGURACIÓN ---------- */
-// Reemplaza estos dos valores con los de tu proyecto de Supabase.
-// Los encuentras en: Project Settings > API
-const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co/rest/v1/";
+// Dirección base corregida (sin rutas internas al final)
+const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZHR1YWxvaWp1dGJ2b3poYXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NTU4OTgsImV4cCI6MjA5OTEzMTg5OH0.RMIEjlLpas_nIy32z9O2DoXrD5FVRdgj0BdSnb8QT4w";
 
-// Nombre de la tabla que contiene los productos (ver guía al final del README)
+// Nombre de la tabla que contiene los productos
 const TABLE_NAME = "productos";
 
-// Número de WhatsApp Business de la tienda, formato internacional sin signos (52 = México)
-const WHATSAPP_NUMBER = "5212411028038";
+// Número de WhatsApp Business de la tienda (Corregido a formato internacional puro)
+const WHATSAPP_NUMBER = "522411028038";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
