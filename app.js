@@ -48,10 +48,10 @@ async function loadProducts() {
   errorEl.classList.add("hidden");
   grid.innerHTML = "";
 
-  // Agregamos 'precio' y 'titulo' a la consulta
+  // Agregamos 'precio_oferta' a la consulta de Supabase
   const { data, error } = await supabaseClient
     .from(TABLE_NAME)
-    .select("id, titulo, imagen_url, tallas, detalles, precio")
+    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta")
     .order("id", { ascending: false });
 
   loadingEl.classList.add("hidden");
@@ -88,14 +88,35 @@ function renderProducts(list) {
       ? tallas.map(t => `<span class="size-pill">${escapeHTML(t)}</span>`).join("")
       : `<span class="size-pill">Talla única</span>`;
 
-    // Formatear el precio (si existe)
-    const precioHTML = p.precio ? `<p class="text-gold font-mono font-bold text-sm mt-1">$${p.precio}</p>` : '';
+    // LÓGICA DE PRECIOS Y OFERTAS
+    let precioHTML = '';
+    let etiquetaOfertaHTML = '';
+
+    if (p.precio_oferta) {
+      // Si hay oferta: Muestra precio nuevo resaltado y el original tachado (line-through)
+      precioHTML = `
+        <div class="flex items-center gap-2 mt-1">
+          <span class="text-gold font-mono font-bold text-sm">$${p.precio_oferta}</span>
+          <span class="text-muted font-mono text-xs line-through">$${p.precio}</span>
+        </div>
+      `;
+      // Añade una etiqueta visual de Oferta sobre la imagen
+      etiquetaOfertaHTML = `
+        <span class="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded">
+          Oferta
+        </span>
+      `;
+    } else if (p.precio) {
+      // Si no hay oferta, muestra el precio normalito
+      precioHTML = `<p class="text-gold font-mono font-bold text-sm mt-1">$${p.precio}</p>`;
+    }
 
     return `
-      <article class="product-card fade-up" style="animation-delay:${Math.min(i * 40, 400)}ms">
-        <div class="product-card__img-wrap">
+      <article class="product-card fade-up relative" style="animation-delay:${Math.min(i * 40, 400)}ms">
+        <div class="product-card__img-wrap relative">
+          ${etiquetaOfertaHTML}
           <img src="${escapeAttr(p.imagen_url)}" alt="${escapeAttr(p.titulo)}" loading="lazy"
-               onerror="this.src='https://placehold.co/400x533/16151B/C9A227?text=Tienda+Leon'">
+               onerror="this.src='https://placehold.co/400x533/16151B/C9A227?text=León+Vintage'">
         </div>
         <div class="p-4 flex flex-col gap-2 flex-1">
           <h3 class="font-display font-bold text-base leading-snug">${escapeHTML(p.titulo || "Producto sin nombre")}</h3>
