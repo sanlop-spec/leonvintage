@@ -171,3 +171,10 @@ input:focus-visible {
 #imageModal.active #modalImg {
   transform: scale(1);
 }
+.product-card__img-wrap img {
+  cursor: zoom-in;
+  transition: transform 0.3s ease;
+}
+.product-card__img-wrap img:hover {
+  transform: scale(1.05); /* Da un pequeño zoom al pasar el mouse */
+}
