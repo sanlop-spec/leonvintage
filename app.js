@@ -262,7 +262,6 @@ document.getElementById("cartOverlay").addEventListener("click", closeCart);
 /* ---------- 6. CHECKOUT VÍA WHATSAPP ---------- */
 function buildWhatsAppMessage() {
   const lines = cart.map(item => `- ${item.cantidad}x ${item.titulo} (Talla ${item.talla})`);
-  // Cambiado a ¡Hola, León Vintage!
   return `¡Hola, León Vintage! Me interesa dominar mi estilo con el siguiente pedido:\n${lines.join("\n")}\n¿Tienen disponibilidad para coordinar el pago?`;
 }
 
@@ -278,49 +277,34 @@ document.getElementById("year").textContent = new Date().getFullYear();
 renderCart();
 updateCartBadges();
 loadProducts();
-/* ---------- VISTA PREVIA DE IMAGEN (MODAL) ---------- */
+
+/* ---------- 8. VISTA PREVIA DE IMAGEN (MODAL) ---------- */
 const imageModal = document.getElementById("imageModal");
 const modalImg = document.getElementById("modalImg");
 const closeModalBtn = document.getElementById("closeModalBtn");
 
-// 1. Escuchar los clics en las imágenes de las tarjetas de producto
-document.getElementById("productGrid").addEventListener("click", (e) => {
-  // Buscamos si el clic fue en la imagen del producto
-  const clickedImg = e.target.closest(".product-card__img-wrap img");
-  
-  if (clickedImg) {
-    const src = clickedImg.getAttribute("src");
-    const alt = clickedImg.getAttribute("alt");
-    
-    /* ---------- VISTA PREVIA DE IMAGEN (MODAL) ---------- */
-const imageModal = document.getElementById("imageModal");
-const modalImg = document.getElementById("modalImg");
-const closeModalBtn = document.getElementById("closeModalBtn");
-
-// Aseguramos que escuche el clic en todo el contenedor de productos
 const productGrid = document.getElementById("productGrid");
 if (productGrid) {
   productGrid.addEventListener("click", (e) => {
-    // Buscamos si el elemento clickeado es una imagen dentro de la tarjeta
+    // Buscamos si el elemento clickeado es una imagen dentro de la tarjeta de producto
     const clickedImg = e.target.closest(".product-card__img-wrap img") || e.target.closest("article img");
     
     if (clickedImg) {
-      e.preventDefault(); // Evitamos cualquier acción por defecto
+      e.preventDefault(); 
       const src = clickedImg.getAttribute("src");
       const alt = clickedImg.getAttribute("alt");
       
-      // Abrimos en grande siempre que no sea la imagen de error por defecto
+      // Abre en grande si no es la imagen vacía de error
       if (src && !src.includes("placehold.co")) {
         modalImg.src = src;
         modalImg.alt = alt || "León Vintage";
         imageModal.classList.add("active");
-        document.body.classList.add("overflow-hidden"); // Bloquea el scroll de fondo
+        document.body.classList.add("overflow-hidden");
       }
     }
   });
 }
 
-// Función para cerrar el modal
 function closeImageModal() {
   if (imageModal) {
     imageModal.classList.remove("active");
@@ -331,7 +315,6 @@ function closeImageModal() {
   }
 }
 
-// Eventos para cerrar
 if (closeModalBtn) {
   closeModalBtn.addEventListener("click", closeImageModal);
 }
