@@ -278,3 +278,50 @@ document.getElementById("year").textContent = new Date().getFullYear();
 renderCart();
 updateCartBadges();
 loadProducts();
+/* ---------- VISTA PREVIA DE IMAGEN (MODAL) ---------- */
+const imageModal = document.getElementById("imageModal");
+const modalImg = document.getElementById("modalImg");
+const closeModalBtn = document.getElementById("closeModalBtn");
+
+// 1. Escuchar los clics en las imágenes de las tarjetas de producto
+document.getElementById("productGrid").addEventListener("click", (e) => {
+  // Buscamos si el clic fue en la imagen del producto
+  const clickedImg = e.target.closest(".product-card__img-wrap img");
+  
+  if (clickedImg) {
+    const src = clickedImg.getAttribute("src");
+    const alt = clickedImg.getAttribute("alt");
+    
+    // Si la imagen no es el placeholder de error, la abrimos en grande
+    if (src && !src.includes("placehold.co")) {
+      modalImg.src = src;
+      modalImg.alt = alt || "León Vintage";
+      imageModal.classList.add("active");
+      document.body.classList.add("overflow-hidden"); // Evita que la página de atrás se mueva
+    }
+  }
+});
+
+// 2. Función para cerrar el modal
+function closeImageModal() {
+  imageModal.classList.remove("active");
+  document.body.classList.remove("overflow-hidden");
+  setTimeout(() => {
+    modalImg.src = ""; // Limpiamos la imagen al cerrar
+  }, 300);
+}
+
+// Cerrar al dar clic en la tacha o en el fondo negro
+closeModalBtn.addEventListener("click", closeImageModal);
+imageModal.addEventListener("click", (e) => {
+  if (e.target === imageModal) {
+    closeImageModal();
+  }
+});
+
+// Cerrar presionando la tecla "Escape"
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && imageModal.classList.contains("active")) {
+    closeImageModal();
+  }
+});
