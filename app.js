@@ -333,7 +333,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && imageModal && imageModal.classList.contains("active")) {
     closeImageModal();
   }
-});}
+});
 
 /* ---------- 3. CARGA DEL CATÁLOGO ---------- */
 async function loadProducts() {
