@@ -41,6 +41,7 @@
     .product-card { transition: all 0.3s ease; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02); }
     .product-card:hover { border-color: #D4AF37; transform: translateY(-4px); }
     .product-card__img-wrap img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+    details summary::-webkit-details-marker { display: none; }
   </style>
 </head>
 <body class="font-mono min-h-screen flex flex-col justify-between">
@@ -74,28 +75,28 @@
     </div>
   </header>
 
-  <!-- ================= BARRA DE GARANTÍAS Y CONFIANZA ================= -->
+  <!-- ================= BARRA DE GARANTÍAS Y CONFIANZA LOCAL ================= -->
   <section class="bg-white/[0.02] border-b border-white/10 py-3 px-4">
     <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-center font-mono text-xs">
       <div class="flex items-center justify-center gap-2 py-1">
         <span class="text-gold text-base">💎</span>
         <div>
           <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Piezas 100% Únicas</span>
-          <span class="text-[10px] text-muted">Prendas seleccionadas y garantía de calidad</span>
+          <span class="text-[10px] text-muted">Prendas verificadas y en excelente estado</span>
         </div>
       </div>
       <div class="flex items-center justify-center gap-2 py-1 border-t sm:border-t-0 sm:border-l sm:border-r border-white/10">
-        <span class="text-gold text-base">📐</span>
+        <span class="text-gold text-base">📍</span>
         <div>
-          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Medidas Exactas en cm</span>
-          <span class="text-[10px] text-muted">Asegura tu talla real sin sorpresas</span>
+          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Entrega Personal / Punto Medio</span>
+          <span class="text-[10px] text-muted">Coordinación directa y segura</span>
         </div>
       </div>
       <div class="flex items-center justify-center gap-2 py-1 border-t sm:border-t-0 border-white/10">
-        <span class="text-gold text-base">📦</span>
+        <span class="text-gold text-base">💵</span>
         <div>
-          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Atención Directa por WhatsApp</span>
-          <span class="text-[10px] text-muted">Coordinación de entrega ágil y personalizada</span>
+          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Pago en Efectivo o Transferencia</span>
+          <span class="text-[10px] text-muted">Pagas al recibir o vía SPEI directo</span>
         </div>
       </div>
     </div>
@@ -116,10 +117,10 @@
             </span>
           </div>
           <h2 class="font-display font-bold text-lg md:text-2xl text-bone leading-snug">
-            Arma tu Outfit Completo & Obter 15% OFF
+            Arma tu Outfit Completo & Obtén 15% OFF
           </h2>
           <p class="font-mono text-xs text-muted max-w-xl">
-            Selección de prendas exclusivas. Combina 2 o más piezas en el creador para recibir un descuento directo + accesorio de regalo.
+            Combina 2 o más prendas en el creador para recibir un descuento directo + accesorio de regalo.
           </p>
         </div>
 
@@ -131,9 +132,9 @@
       </div>
     </section>
 
-    <!-- ================= BARRA DE FILTROS Y ORDENAMIENTO ================= -->
+    <!-- ================= BARRA DE FILTROS Y TALLAS ================= -->
     <div class="space-y-4 my-8">
-      <!-- Categorías Principales -->
+      <!-- Categorías -->
       <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar" id="categoryFilters">
         <button data-cat="all" class="cat-btn active py-2 px-5 rounded-full border border-gold bg-gold text-onyx font-mono text-xs uppercase font-semibold transition-all">Todos</button>
         <button data-cat="ropa" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Ropa</button>
@@ -144,7 +145,7 @@
         </button>
       </div>
 
-      <!-- Sub-Barra: Tallas (CH, M, G, EG) y Ordenamiento -->
+      <!-- Sub-Barra: Tallas y Ordenamiento -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-3 bg-white/[0.02] border border-white/10 rounded-xl">
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar" id="sizeFilters">
           <span class="text-[11px] font-mono text-muted uppercase tracking-wider mr-1">Talla:</span>
@@ -175,15 +176,15 @@
 
   <!-- ================= MODAL VISTA RÁPIDA / QUICK VIEW ================= -->
   <div id="quickViewModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-onyx border border-white/10 rounded-2xl p-6 max-w-xl w-full relative shadow-2xl">
-      <button id="closeQuickViewBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono">✕</button>
+    <div class="bg-onyx border border-white/10 rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl max-h-[90vh] overflow-y-auto">
+      <button id="closeQuickViewBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono z-10">✕</button>
       <div id="quickViewContent">
-        <!-- Se llena con app.js -->
+        <!-- Se llena dinámicamente con app.js -->
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL CREADOR DE OUTFIT (15% OFF) ================= -->
+  <!-- ================= MODAL CREADOR DE OUTFIT ================= -->
   <div id="outfitModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-onyx border border-white/10 rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl">
       <button id="closeOutfitBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono">✕</button>
@@ -192,7 +193,7 @@
       <p class="font-mono text-xs text-muted mb-6">Selecciona 2 o más prendas para activar tu 15% de descuento automático.</p>
       
       <div id="outfitSelectionGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 mb-6 border border-white/5 rounded-xl p-3">
-        <!-- Se llena desde app.js -->
+        <!-- Se llena dinámicamente -->
       </div>
 
       <div class="border-t border-white/10 pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -222,18 +223,24 @@
         </p>
       </div>
 
-      <div id="cartItemsContainer" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+      <div id="cartItemsContainer" class="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
         <!-- Se llena dinámicamente -->
       </div>
     </div>
 
     <div class="border-t border-white/10 pt-4 space-y-4">
+      <!-- Indicador Métodos de Pago Aceptados -->
+      <div class="bg-white/5 p-3 rounded-lg flex justify-between items-center text-[10px] text-muted font-mono">
+        <span>Aceptamos:</span>
+        <span class="text-bone font-bold">💵 Efectivo / 📲 Transferencia SPEI</span>
+      </div>
+
       <div class="flex justify-between items-center">
         <span class="font-mono text-xs text-muted">Prenda(s) en orden:</span>
         <span id="cartTotalItems" class="font-mono font-bold text-bone">0</span>
       </div>
       <button id="checkoutBtn" class="w-full py-3.5 rounded-full bg-gold text-onyx font-mono text-xs uppercase font-bold tracking-widest hover:bg-goldBright transition-all shadow-lg">
-        Confirmar Pedido vía WhatsApp
+        Acordar Entrega vía WhatsApp
       </button>
     </div>
   </div>
