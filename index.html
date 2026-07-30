@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>León Vintage — Catálogo Exclusivo</title>
+  <title>León Vintage — Archivo & Catálogo Exclusivo</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -45,6 +45,16 @@
 </head>
 <body class="font-mono min-h-screen flex flex-col justify-between">
 
+  <!-- ================= CINTILLO TOP ANUNCIOS ROTATIVOS ================= -->
+  <div class="bg-black border-b border-gold/30 text-bone text-[11px] font-mono py-1.5 px-4 overflow-hidden relative">
+    <div class="flex justify-center items-center gap-2 text-center">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-pulse"></span>
+      <p id="topTickerText" class="tracking-widest uppercase text-muted transition-opacity duration-300">
+        ✨ 15% OFF automático en tu paquete al crear un Outfit de 2+ prendas
+      </p>
+    </div>
+  </div>
+
   <!-- ================= NAVBAR ================= -->
   <header class="sticky top-0 z-40 bg-onyx/90 backdrop-blur-md border-b border-white/10 px-4 py-4 md:px-8">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -52,10 +62,10 @@
       
       <div class="flex items-center gap-4">
         <!-- Buscador -->
-        <input type="text" id="searchInput" placeholder="Buscar prenda..." 
+        <input type="text" id="searchInput" placeholder="Buscar pieza o estilo..." 
                class="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-bone focus:outline-none focus:border-gold hidden sm:block">
         
-        <!-- Botón Abrir Carrito -->
+        <!-- Botón Carrito -->
         <button id="openCartBtn" class="relative py-2 px-4 rounded-full border border-gold/40 text-gold hover:bg-gold/10 text-xs uppercase tracking-wider font-bold transition-all flex items-center gap-2">
           <span>Carrito</span>
           <span id="cartCountBadge" class="bg-gold text-onyx rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">0</span>
@@ -64,9 +74,36 @@
     </div>
   </header>
 
+  <!-- ================= BARRA DE GARANTÍAS Y CONFIANZA ================= -->
+  <section class="bg-white/[0.02] border-b border-white/10 py-3 px-4">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-center font-mono text-xs">
+      <div class="flex items-center justify-center gap-2 py-1">
+        <span class="text-gold text-base">💎</span>
+        <div>
+          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Piezas 100% Únicas</span>
+          <span class="text-[10px] text-muted">Curaduría visual y calidad autenticada</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-center gap-2 py-1 border-t sm:border-t-0 sm:border-l sm:border-r border-white/10">
+        <span class="text-gold text-base">📐</span>
+        <div>
+          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Medidas Exactas en cm</span>
+          <span class="text-[10px] text-muted">Asegura tu talla real sin sorpresas</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-center gap-2 py-1 border-t sm:border-t-0 border-white/10">
+        <span class="text-gold text-base">📦</span>
+        <div>
+          <span class="font-bold text-bone block text-[11px] uppercase tracking-wider">Atención Directa por WhatsApp</span>
+          <span class="text-[10px] text-muted">Coordinación de entrega ágil y personalizada</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <main class="max-w-7xl mx-auto px-4 py-6 md:px-8 flex-1 w-full">
 
-    <!-- ================= BANNER ÚLTIMA OPORTUNIDAD & PROMO OUTFIT ================= -->
+    <!-- ================= BANNER OUTFIT & PROMO ================= -->
     <section class="my-4 p-6 md:p-8 rounded-2xl bg-onyx/90 border-2 border-dashed border-copper/60 relative overflow-hidden shadow-2xl backdrop-blur-sm">
       <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-copper/10 rounded-full blur-2xl pointer-events-none"></div>
       
@@ -75,16 +112,14 @@
           <div class="flex items-center justify-center md:justify-start gap-2">
             <span class="inline-block w-2 h-2 rounded-full bg-copper animate-ping"></span>
             <span class="font-mono text-xs uppercase tracking-[0.25em] text-copper font-bold">
-              Última Oportunidad — Vault Sales
+              Promoción de Temporada
             </span>
           </div>
-          
           <h2 class="font-display font-bold text-lg md:text-2xl text-bone leading-snug">
-            Piezas únicas en su último ciclo.
+            Arma tu Outfit Completo & Obter 15% OFF
           </h2>
-          
           <p class="font-mono text-xs text-muted max-w-xl">
-            Precios de liquidación para renovar el archivo. Arma tu outfit completo con 15% de descuento o lleva 2 prendas para recibir un accesorio de regalo.
+            Piezas de archivo seleccionadas. Combina 2 o más prendas en el creador para recibir un descuento directo + accesorio de regalo.
           </p>
         </div>
 
@@ -96,24 +131,57 @@
       </div>
     </section>
 
-    <!-- ================= FILTROS DE CATEGORÍAS ================= -->
-    <div class="flex items-center gap-2 overflow-x-auto my-8 pb-2 no-scrollbar" id="categoryFilters">
-      <button data-cat="all" class="cat-btn active py-2 px-5 rounded-full border border-gold bg-gold text-onyx font-mono text-xs uppercase font-semibold transition-all">Todos</button>
-      <button data-cat="ropa" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Ropa</button>
-      <button data-cat="calzado" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Calzado</button>
-      <button data-cat="accesorios" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Varios</button>
-      <!-- Categoría Especial -->
-      <button data-cat="ultima-oportunidad" class="cat-btn py-2 px-5 rounded-full border border-copper text-copper hover:bg-copper hover:text-bone font-mono text-xs uppercase font-bold transition-all flex items-center gap-1">
-        🔥 Última Oportunidad
-      </button>
+    <!-- ================= BARRA DE FILTROS Y ORDENAMIENTO ================= -->
+    <div class="space-y-4 my-8">
+      <!-- Categorías Principales -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar" id="categoryFilters">
+        <button data-cat="all" class="cat-btn active py-2 px-5 rounded-full border border-gold bg-gold text-onyx font-mono text-xs uppercase font-semibold transition-all">Todos</button>
+        <button data-cat="ropa" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Ropa</button>
+        <button data-cat="calzado" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Calzado</button>
+        <button data-cat="accesorios" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Varios</button>
+        <button data-cat="ultima-oportunidad" class="cat-btn py-2 px-5 rounded-full border border-copper text-copper hover:bg-copper hover:text-bone font-mono text-xs uppercase font-bold transition-all flex items-center gap-1">
+          🔥 Última Oportunidad
+        </button>
+      </div>
+
+      <!-- Sub-Barra: Tallas y Ordenamiento -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-3 bg-white/[0.02] border border-white/10 rounded-xl">
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar" id="sizeFilters">
+          <span class="text-[11px] font-mono text-muted uppercase tracking-wider mr-1">Talla:</span>
+          <button data-size="all" class="size-btn active py-1 px-3 rounded-md border border-gold bg-gold text-onyx font-mono text-[11px] font-bold transition-all">Todas</button>
+          <button data-size="CH" class="size-btn py-1 px-3 rounded-md border border-white/10 text-muted hover:border-gold hover:text-bone font-mono text-[11px] transition-all">CH</button>
+          <button data-size="M" class="size-btn py-1 px-3 rounded-md border border-white/10 text-muted hover:border-gold hover:text-bone font-mono text-[11px] transition-all">M</button>
+          <button data-size="G" class="size-btn py-1 px-3 rounded-md border border-white/10 text-muted hover:border-gold hover:text-bone font-mono text-[11px] transition-all">G</button>
+          <button data-size="EG" class="size-btn py-1 px-3 rounded-md border border-white/10 text-muted hover:border-gold hover:text-bone font-mono text-[11px] transition-all">EG</button>
+        </div>
+
+        <div class="flex items-center gap-2 justify-end">
+          <label for="sortSelect" class="text-[11px] font-mono text-muted uppercase tracking-wider">Ordenar:</label>
+          <select id="sortSelect" class="bg-onyx border border-white/20 text-bone text-xs font-mono rounded-lg px-3 py-1.5 focus:outline-none focus:border-gold cursor-pointer">
+            <option value="recent">Más Reciente</option>
+            <option value="price-asc">Precio: Menor a Mayor</option>
+            <option value="price-desc">Precio: Mayor a Menor</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <!-- ================= GRID DE PRODUCTOS ================= -->
     <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      <!-- Se carga dinámicamente con JavaScript -->
+      <!-- Se puebla desde JavaScript -->
     </div>
 
   </main>
+
+  <!-- ================= MODAL VISTA RÁPIDA / QUICK VIEW ================= -->
+  <div id="quickViewModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-onyx border border-white/10 rounded-2xl p-6 max-w-xl w-full relative shadow-2xl">
+      <button id="closeQuickViewBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono">✕</button>
+      <div id="quickViewContent">
+        <!-- Se llena con app.js -->
+      </div>
+    </div>
+  </div>
 
   <!-- ================= MODAL CREADOR DE OUTFIT (15% OFF) ================= -->
   <div id="outfitModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -121,15 +189,15 @@
       <button id="closeOutfitBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono">✕</button>
       
       <h2 class="font-display font-bold text-xl text-bone mb-1">✨ Creador de Outfit</h2>
-      <p class="font-mono text-xs text-muted mb-6">Selecciona 2 o más prendas para activar tu 15% de descuento automático en el paquete.</p>
+      <p class="font-mono text-xs text-muted mb-6">Selecciona 2 o más prendas para activar tu 15% de descuento automático.</p>
       
       <div id="outfitSelectionGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 mb-6 border border-white/5 rounded-xl p-3">
-        <!-- Se carga desde JavaScript -->
+        <!-- Se llena desde app.js -->
       </div>
 
       <div class="border-t border-white/10 pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <span class="font-mono text-xs text-muted block">Total Estimado:</span>
+          <span class="font-mono text-xs text-muted block">Total Paquete:</span>
           <span id="outfitTotal" class="font-mono font-bold text-gold text-lg">$0.00</span>
           <span id="outfitDiscountNotice" class="font-mono text-[10px] text-emerald-400 block hidden">¡15% OFF Aplicado!</span>
         </div>
@@ -148,23 +216,20 @@
         <button id="closeCartBtn" class="text-muted hover:text-bone font-mono text-lg">✕</button>
       </div>
 
-      <!-- BANNER DE RECOMPENSA / REGALO EN CARRITO -->
       <div id="giftRewardBanner" class="bg-copper/10 border border-copper/40 rounded-xl p-3 text-center mb-4">
         <p id="giftRewardText" class="font-mono text-xs text-copper font-semibold">
           🎁 Agrega 2 prendas para recibir un accesorio de regalo.
         </p>
       </div>
 
-      <!-- Contenedor de ítems -->
       <div id="cartItemsContainer" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
         <!-- Se llena dinámicamente -->
       </div>
     </div>
 
-    <!-- Footer Carrito -->
     <div class="border-t border-white/10 pt-4 space-y-4">
       <div class="flex justify-between items-center">
-        <span class="font-mono text-xs text-muted">Prenda(s) acumuladas:</span>
+        <span class="font-mono text-xs text-muted">Pieza(s) en orden:</span>
         <span id="cartTotalItems" class="font-mono font-bold text-bone">0</span>
       </div>
       <button id="checkoutBtn" class="w-full py-3.5 rounded-full bg-gold text-onyx font-mono text-xs uppercase font-bold tracking-widest hover:bg-goldBright transition-all shadow-lg">
@@ -173,9 +238,8 @@
     </div>
   </div>
 
-  <!-- Footer general -->
   <footer class="border-t border-white/10 py-6 text-center text-xs text-muted font-mono">
-    <p>© 2026 León Vintage. Piezas exclusivas.</p>
+    <p>© 2026 León Vintage. Piezas de archivo y colección.</p>
   </footer>
 
   <script src="app.js"></script>
