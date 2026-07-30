@@ -1,218 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>León Vintage — Viste el poder, domina tu estilo.</title>
-<meta name="description" content="Catálogo oficial de León Vintage. Ropa y accesorios con carácter.">
-
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          onyx: '#0B0B0F',
-          surface: '#16151B',
-          surface2: '#1E1C24',
-          gold: '#C9A227',
-          goldBright: '#E8C468',
-          copper: '#A85C32',
-          bone: '#F5F1E8',
-          muted: '#9C978D'
-        },
-        fontFamily: {
-          display: ['Syne', 'sans-serif'],
-          body: ['Inter', 'sans-serif'],
-          mono: ['DM Mono', 'monospace']
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>León Vintage — Catálogo Exclusivo</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            onyx: '#0F0F10',
+            bone: '#F4F1EA',
+            gold: '#D4AF37',
+            goldBright: '#F3E5AB',
+            copper: '#C87D55',
+            muted: '#A1A1AA'
+          },
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            mono: ['Space Mono', 'monospace']
+          }
         }
       }
     }
-  }
-</script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="styles.css">
+  </script>
+  <!-- Fuentes Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    body { background-color: #0F0F10; color: #F4F1EA; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+    .cart-open { transform: translateX(0); }
+    .product-card { transition: all 0.3s ease; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.02); }
+    .product-card:hover { border-color: #D4AF37; transform: translateY(-4px); }
+    .product-card__img-wrap img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+  </style>
 </head>
-<body class="bg-onyx text-bone font-body antialiased">
+<body class="font-mono min-h-screen flex flex-col justify-between">
 
-<!-- ================= HEADER ================= -->
-<header class="sticky top-0 z-40 border-b border-white/10 bg-onyx/85 backdrop-blur-md">
-  <div class="max-w-7xl mx-auto px-5 md:px-8 py-4 flex items-center justify-between gap-4">
-
-    <a href="#top" class="flex items-center gap-3 group">
-      <div class="mane-mark">
-        <svg viewBox="0 0 60 60" class="w-9 h-9 md:w-11 md:h-11">
-          <g class="mane-rays">
-            <circle cx="30" cy="30" r="27" fill="none" stroke="url(#g1)" stroke-width="1.2"/>
-            <g stroke="url(#g1)" stroke-width="1.4" stroke-linecap="round">
-              <line x1="30" y1="2" x2="30" y2="10"/>
-              <line x1="30" y1="50" x2="30" y2="58"/>
-              <line x1="2" y1="30" x2="10" y2="30"/>
-              <line x1="50" y1="30" x2="58" y2="30"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-              <line x1="45" y1="45" x2="51" y2="51"/>
-              <line x1="9" y1="51" x2="15" y2="45"/>
-              <line x1="45" y1="15" x2="51" y2="9"/>
-            </g>
-          </g>
-          <circle cx="30" cy="30" r="15" fill="#0B0B0F" stroke="url(#g1)" stroke-width="1.5"/>
-          <text x="30" y="36" text-anchor="middle" font-family="Syne" font-weight="800" font-size="16" fill="url(#g1)">L</text>
-          <defs>
-            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#E8C468"/>
-              <stop offset="100%" stop-color="#A85C32"/>
-            </linearGradient>
-          </defs>
-        </svg>
+  <!-- ================= NAVBAR ================= -->
+  <header class="sticky top-0 z-40 bg-onyx/90 backdrop-blur-md border-b border-white/10 px-4 py-4 md:px-8">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <h1 class="font-display font-bold text-xl md:text-2xl tracking-wider text-gold">LEÓN VINTAGE</h1>
+      
+      <div class="flex items-center gap-4">
+        <!-- Buscador -->
+        <input type="text" id="searchInput" placeholder="Buscar prenda..." 
+               class="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-bone focus:outline-none focus:border-gold hidden sm:block">
+        
+        <!-- Botón Abrir Carrito -->
+        <button id="openCartBtn" class="relative py-2 px-4 rounded-full border border-gold/40 text-gold hover:bg-gold/10 text-xs uppercase tracking-wider font-bold transition-all flex items-center gap-2">
+          <span>Carrito</span>
+          <span id="cartCountBadge" class="bg-gold text-onyx rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">0</span>
+        </button>
       </div>
-      <div class="leading-tight">
-        <!-- Nombre actualizado aquí -->
-        <p class="font-display font-extrabold tracking-wide text-lg md:text-xl">LEÓN VINTAGE</p>
-        <p class="hidden sm:block font-mono text-[10px] uppercase tracking-[0.18em] text-gold/80">Viste el poder, domina tu estilo</p>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 md:px-8 flex-1 w-full">
+
+    <!-- ================= BANNER ÚLTIMA OPORTUNIDAD & PROMO OUTFIT ================= -->
+    <section class="my-4 p-6 md:p-8 rounded-2xl bg-onyx/90 border-2 border-dashed border-copper/60 relative overflow-hidden shadow-2xl backdrop-blur-sm">
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-copper/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+        <div class="space-y-2 text-center md:text-left">
+          <div class="flex items-center justify-center md:justify-start gap-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-copper animate-ping"></span>
+            <span class="font-mono text-xs uppercase tracking-[0.25em] text-copper font-bold">
+              Última Oportunidad — Vault Sales
+            </span>
+          </div>
+          
+          <h2 class="font-display font-bold text-lg md:text-2xl text-bone leading-snug">
+            Piezas únicas en su último ciclo.
+          </h2>
+          
+          <p class="font-mono text-xs text-muted max-w-xl">
+            Precios de liquidación para renovar el archivo. Arma tu outfit completo con 15% de descuento o lleva 2 prendas para recibir un accesorio de regalo.
+          </p>
+        </div>
+
+        <div class="shrink-0 flex flex-col sm:flex-row gap-3">
+          <button id="openOutfitBuilderBtn" class="py-3 px-6 rounded-full bg-gold text-onyx font-mono text-xs uppercase tracking-widest font-bold hover:bg-goldBright transition-all shadow-lg flex items-center gap-2 justify-center">
+            ✨ Creador de Outfit (15% OFF)
+          </button>
+        </div>
       </div>
-    </a>
+    </section>
 
-    <nav class="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-[0.15em] text-muted">
-      <a href="#catalogo" class="hover:text-gold transition-colors">Catálogo</a>
-      <a href="#contacto" class="hover:text-gold transition-colors">Contacto</a>
-    </nav>
+    <!-- ================= FILTROS DE CATEGORÍAS ================= -->
+    <div class="flex items-center gap-2 overflow-x-auto my-8 pb-2 no-scrollbar" id="categoryFilters">
+      <button data-cat="all" class="cat-btn active py-2 px-5 rounded-full border border-gold bg-gold text-onyx font-mono text-xs uppercase font-semibold transition-all">Todos</button>
+      <button data-cat="ropa" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Ropa</button>
+      <button data-cat="calzado" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Calzado</button>
+      <button data-cat="accesorios" class="cat-btn py-2 px-5 rounded-full border border-white/20 text-muted hover:border-gold hover:text-gold font-mono text-xs uppercase font-semibold transition-all">Varios</button>
+      <!-- Categoría Especial -->
+      <button data-cat="ultima-oportunidad" class="cat-btn py-2 px-5 rounded-full border border-copper text-copper hover:bg-copper hover:text-bone font-mono text-xs uppercase font-bold transition-all flex items-center gap-1">
+        🔥 Última Oportunidad
+      </button>
+    </div>
 
-    <div class="flex items-center gap-3">
-      <a href="https://www.facebook.com/venta.detodo.leon" target="_blank" rel="noopener" aria-label="Facebook de León Vintage" class="social-icon">
-        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.08 5.66 21.24 10.44 22v-7.03H7.9v-2.91h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.45h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34V22C18.34 21.24 22 17.08 22 12.06Z"/></svg>
-      </a>
-      <a href="https://wa.me/522411028038?text=%C2%A1Hola%2C%20Le%C3%B3n%20Vintage%21%20Tengo%20una%20consulta." target="_blank" rel="noopener" aria-label="WhatsApp de León Vintage" class="social-icon">
-        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.08L2 22l5.05-1.35A10 10 0 1 0 12 2Zm0 18.15a8.13 8.13 0 0 1-4.15-1.14l-.3-.18-3 .8.8-2.93-.19-.3A8.15 8.15 0 1 1 12 20.15Zm4.48-6.12c-.24-.12-1.44-.71-1.66-.8-.22-.08-.39-.12-.55.12-.16.24-.63.8-.78.96-.14.16-.29.18-.53.06-.24-.12-1.03-.38-1.96-1.22-.72-.65-1.21-1.44-1.35-1.68-.14-.24-.02-.37.11-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.75-1.82-.2-.48-.4-.42-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.65.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28Z"/></svg>
-      </a>
-      <button id="cartBtn" aria-label="Abrir carrito" class="relative flex items-center justify-center w-10 h-10 rounded-full border border-gold/40 hover:border-gold hover:bg-gold/10 transition-colors">
-        <svg viewBox="0 0 24 24" class="w-5 h-5 text-gold" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17M17 13v6M17 19a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm-9 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Z"/></svg>
-        <span id="cartCount" class="hidden absolute -top-1.5 -right-1.5 bg-gold text-onyx text-[10px] font-mono font-bold w-5 h-5 rounded-full items-center justify-center">0</span>
+    <!-- ================= GRID DE PRODUCTOS ================= -->
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Se carga dinámicamente con JavaScript -->
+    </div>
+
+  </main>
+
+  <!-- ================= MODAL CREADOR DE OUTFIT (15% OFF) ================= -->
+  <div id="outfitModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-onyx border border-white/10 rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl">
+      <button id="closeOutfitBtn" class="absolute top-4 right-4 text-muted hover:text-bone text-lg font-mono">✕</button>
+      
+      <h2 class="font-display font-bold text-xl text-bone mb-1">✨ Creador de Outfit</h2>
+      <p class="font-mono text-xs text-muted mb-6">Selecciona 2 o más prendas para activar tu 15% de descuento automático en el paquete.</p>
+      
+      <div id="outfitSelectionGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-2 mb-6 border border-white/5 rounded-xl p-3">
+        <!-- Se carga desde JavaScript -->
+      </div>
+
+      <div class="border-t border-white/10 pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <span class="font-mono text-xs text-muted block">Total Estimado:</span>
+          <span id="outfitTotal" class="font-mono font-bold text-gold text-lg">$0.00</span>
+          <span id="outfitDiscountNotice" class="font-mono text-[10px] text-emerald-400 block hidden">¡15% OFF Aplicado!</span>
+        </div>
+        <button id="addOutfitToCartBtn" class="w-full sm:w-auto py-3 px-6 rounded-full bg-gold text-onyx font-mono text-xs uppercase font-bold tracking-wider disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>
+          Agregar Outfit al Carrito
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DRAWER DEL CARRITO DE COMPRAS ================= -->
+  <div id="cartDrawer" class="cart-drawer fixed top-0 right-0 w-full max-w-md h-full bg-onyx border-l border-white/10 z-50 p-6 flex flex-col justify-between shadow-2xl">
+    <div>
+      <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+        <h3 class="font-display font-bold text-lg text-gold">Tu Carrito</h3>
+        <button id="closeCartBtn" class="text-muted hover:text-bone font-mono text-lg">✕</button>
+      </div>
+
+      <!-- BANNER DE RECOMPENSA / REGALO EN CARRITO -->
+      <div id="giftRewardBanner" class="bg-copper/10 border border-copper/40 rounded-xl p-3 text-center mb-4">
+        <p id="giftRewardText" class="font-mono text-xs text-copper font-semibold">
+          🎁 Agrega 2 prendas para recibir un accesorio de regalo.
+        </p>
+      </div>
+
+      <!-- Contenedor de ítems -->
+      <div id="cartItemsContainer" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Footer Carrito -->
+    <div class="border-t border-white/10 pt-4 space-y-4">
+      <div class="flex justify-between items-center">
+        <span class="font-mono text-xs text-muted">Prenda(s) acumuladas:</span>
+        <span id="cartTotalItems" class="font-mono font-bold text-bone">0</span>
+      </div>
+      <button id="checkoutBtn" class="w-full py-3.5 rounded-full bg-gold text-onyx font-mono text-xs uppercase font-bold tracking-widest hover:bg-goldBright transition-all shadow-lg">
+        Confirmar Pedido vía WhatsApp
       </button>
     </div>
   </div>
-</header>
 
-<!-- ================= HERO ================= -->
-<section id="top" class="relative overflow-hidden border-b border-white/10">
-  <div class="hero-rays" aria-hidden="true"></div>
-  <div class="relative max-w-5xl mx-auto px-5 md:px-8 pt-20 pb-24 md:pt-32 md:pb-36 text-center">
-    <p class="font-mono text-xs md:text-sm tracking-[0.35em] text-gold uppercase mb-5">Colección permanente</p>
-    <h1 class="font-display font-extrabold text-[2.6rem] leading-[1.05] sm:text-6xl md:text-7xl tracking-tight text-bone">
-      VISTE EL PODER.<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-goldBright to-copper">DOMINA TU ESTILO.</span>
-    </h1>
-    <p class="mt-6 font-body text-muted text-base md:text-lg max-w-xl mx-auto">
-      Cada pieza de León Vintage está pensada para quien no pide permiso para destacar. Explora el catálogo y arma tu pedido en segundos.
-    </p>
-    <a href="#catalogo" class="inline-block mt-9 px-8 py-3.5 rounded-full bg-gold hover:bg-goldBright text-onyx font-mono text-xs uppercase tracking-[0.2em] font-medium transition-colors">
-      Ver catálogo
-    </a>
-  </div>
-</section>
+  <!-- Footer general -->
+  <footer class="border-t border-white/10 py-6 text-center text-xs text-muted font-mono">
+    <p>© 2026 León Vintage. Piezas exclusivas.</p>
+  </footer>
 
-<!-- ================= CATÁLOGO ================= -->
-<main id="catalogo" class="max-w-7xl mx-auto px-5 md:px-8 py-16 md:py-24">
-  <div class="flex items-end justify-between mb-10 border-b border-white/10 pb-5">
-    <div>
-      <p class="font-mono text-xs uppercase tracking-[0.2em] text-gold mb-2">Catálogo</p>
-      <h2 class="font-display font-bold text-2xl md:text-3xl">Piezas disponibles</h2>
-    </div>
-    <p id="productCount" class="font-mono text-xs text-muted hidden sm:block"></p>
-  </div>
-
-  <div id="loadingState" class="py-24 text-center font-mono text-sm text-muted tracking-wide">
-    Cargando el catálogo…
-  </div>
-
-  <div id="emptyState" class="hidden py-24 text-center">
-    <p class="font-display text-xl text-bone mb-2">Aún no hay piezas cargadas</p>
-    <p class="font-mono text-xs text-muted">Vuelve pronto, el catálogo se actualiza directamente desde el panel de la tienda.</p>
-  </div>
-
-  <div id="errorState" class="hidden py-24 text-center">
-    <p class="font-display text-xl text-bone mb-2">No se pudo cargar el catálogo</p>
-    <p class="font-mono text-xs text-muted">Revisa tu conexión a internet o inténtalo de nuevo más tarde.</p>
-  </div>
-
-  <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"></div>
-</main>
-
-<!-- ================= CONTACTO / FOOTER ================= -->
-<footer id="contacto" class="border-t border-white/10 mt-10">
-  <div class="max-w-7xl mx-auto px-5 md:px-8 py-14 grid gap-10 md:grid-cols-3">
-    <div>
-      <p class="font-display font-bold text-lg mb-2">LEÓN VINTAGE</p>
-      <p class="font-mono text-xs text-gold uppercase tracking-[0.15em] mb-4">Viste el poder, domina tu estilo</p>
-      <p class="text-sm text-muted max-w-xs">Pedidos y coordinación de pago directo por WhatsApp.</p>
-    </div>
-    <div>
-      <p class="font-mono text-xs uppercase tracking-[0.2em] text-muted mb-4">Contacto</p>
-      <a href="https://wa.me/522411028038?text=%C2%A1Hola%2C%20Le%C3%B3n%20Vintage%21%20Tengo%20una%20consulta." target="_blank" rel="noopener" class="flex items-center gap-2 text-sm hover:text-gold transition-colors mb-2">WhatsApp</a>
-      <a href="https://www.facebook.com/venta.detodo.leon" target="_blank" rel="noopener" class="flex items-center gap-2 text-sm hover:text-gold transition-colors">Facebook</a>
-    </div>
-    <div>
-      <p class="font-mono text-xs uppercase tracking-[0.2em] text-muted mb-4">León Vintage</p>
-      <p class="text-sm text-muted">Catálogo interactivo — próximamente disponible también como app móvil.</p>
-    </div>
-  </div>
-  <div class="border-t border-white/10 py-5 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-    © <span id="year"></span> León Vintage. Todos los derechos reservados.
-  </div>
-</footer>
-
-<!-- ================= BOTÓN FLOTANTE DE CARRITO ================= -->
-<button id="floatingCartBtn" aria-label="Ver carrito" class="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-gold hover:bg-goldBright text-onyx pl-4 pr-5 py-3.5 rounded-full shadow-[0_8px_30px_rgba(201,162,39,0.35)] transition-all">
-  <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17M17 13v6M17 19a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm-9 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Z"/></svg>
-  <span class="font-mono text-xs font-bold uppercase tracking-wide">Carrito</span>
-  <span id="floatingCartCount" class="hidden bg-onyx text-gold text-[11px] font-mono font-bold w-5 h-5 rounded-full items-center justify-center">0</span>
-</button>
-
-<!-- ================= OVERLAY + DRAWER DEL CARRITO ================= -->
-<div id="cartOverlay" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50"></div>
-
-<aside id="cartDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-surface border-l border-white/10 z-50 translate-x-full transition-transform duration-300 flex flex-col">
-  <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
-    <h3 class="font-display font-bold text-lg">Tu pedido</h3>
-    <button id="closeCartBtn" aria-label="Cerrar carrito" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors">
-      <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-  </div>
-
-  <div id="cartItemsContainer" class="flex-1 overflow-y-auto px-6 py-4 space-y-4"></div>
-
-  <div id="cartEmptyMsg" class="flex-1 flex items-center justify-center px-6 text-center">
-    <p class="font-mono text-xs text-muted uppercase tracking-wide">Tu carrito está vacío</p>
-  </div>
-
-  <div class="border-t border-white/10 px-6 py-5 space-y-4">
-    <div class="flex items-center justify-between font-mono text-xs uppercase tracking-wide text-muted">
-      <span>Artículos</span>
-      <span id="cartTotalItems">0</span>
-    </div>
-    <button id="checkoutBtn" class="w-full py-4 rounded-full bg-gold hover:bg-goldBright text-onyx font-mono text-xs uppercase tracking-[0.2em] font-semibold transition-colors disabled:opacity-40 disabled:pointer-events-none">
-      Confirmar pedido por WhatsApp
-    </button>
-  </div>
-</aside>
-
-<!-- Primero colocamos el HTML del modal para que el navegador lo conozca -->
-  <!-- ================= MODAL PARA IMAGEN EN GRANDE ================= -->
-  <div id="imageModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 cursor-zoom-out">
-    <button id="closeModalBtn" aria-label="Cerrar vista" class="absolute top-6 right-6 text-bone hover:text-gold transition-colors w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10">
-      <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
-      </svg>
-    </button>
-    <img id="modalImg" src="" alt="Vista ampliada" class="max-w-full max-h-[85vh] rounded-lg shadow-2xl object-contain scale-95 transition-transform duration-300 ease-out">
-  </div>
-
-  <!-- Y al final de todo van los scripts, incluyendo tu app.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
-</body>
-</html>
 </body>
 </html>
