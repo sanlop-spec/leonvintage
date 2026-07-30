@@ -1,9 +1,7 @@
 /* ============================================
-   TIENDA LEÓN — app.js
-   Catálogo dinámico + carrito + checkout WhatsApp
+   LEÓN VINTAGE — app.js (SISTEMA COMPLETO)
    ============================================ */
 
-/* ---------- 1. CONFIGURACIÓN ---------- */
 const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmZHR1YWxvaWp1dGJ2b3poYXN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1NTU4OTgsImV4cCI6MjA5OTEzMTg5OH0.RMIEjlLpas_nIy32z9O2DoXrD5FVRdgj0BdSnb8QT4w";
 
@@ -12,14 +10,16 @@ const WHATSAPP_NUMBER = "522411028038";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* ---------- 2. ESTADO DEL CARRITO ---------- */
-const CART_STORAGE_KEY = "tienda_leon_cart";
 let cart = loadCart();
 let products = [];
+let currentCategory = "all";
+let searchQuery = "";
+let selectedOutfitItems = [];
 
+/* ---------- PERSISTENCIA DEL CARRITO ---------- */
 function loadCart() {
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const raw = localStorage.getItem("tienda_leon_cart");
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -27,146 +27,148 @@ function loadCart() {
 }
 
 function saveCart() {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  localStorage.setItem("tienda_leon_cart", JSON.stringify(cart));
   renderCart();
   updateCartBadges();
 }
 
-/* ---------- 3. CARGA DEL CATÁLOGO ---------- */
+function updateCartBadges() {
+  const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+  const badge = document.getElementById("cartCountBadge");
+  if (badge) badge.textContent = totalItems;
+}
+
+/* ---------- CARGA DE PRODUCTOS DESDE SUPABASE ---------- */
 async function loadProducts() {
-  const loadingEl = document.getElementById("loadingState");
-  const emptyEl = document.getElementById("emptyState");
-  const errorEl = document.getElementById("errorState");
-  const grid = document.getElementById("productGrid");
-
-  loadingEl.classList.remove("hidden");
-  emptyEl.classList.add("hidden");
-  errorEl.classList.add("hidden");
-  grid.innerHTML = "";
-
   const { data, error } = await supabaseClient
     .from(TABLE_NAME)
-    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta")
+    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria")
     .order("id", { ascending: false });
 
-  loadingEl.classList.add("hidden");
-
-  if (error) {
-    console.error("Error al cargar productos:", error.message);
-    errorEl.classList.remove("hidden");
-    return;
+  if (!error && data) {
+    products = data;
+    applyFiltersAndRender();
+    setupOutfitBuilder();
   }
-
-  if (!data || data.length === 0) {
-    emptyEl.classList.remove("hidden");
-    return;
-  }
-
-  products = data;
-  document.getElementById("productCount").textContent = `${data.length} pieza${data.length === 1 ? "" : "s"}`;
-  document.getElementById("productCount").classList.remove("hidden");
-  renderProducts(data);
 }
 
-function parseTallas(tallas) {
-  if (Array.isArray(tallas)) return tallas.filter(Boolean);
-  if (typeof tallas === "string") return tallas.split(",").map(t => t.trim()).filter(Boolean);
-  return [];
-}
-
-function renderProducts(list) {
+/* ---------- FILTRADO Y RENDER DE PRODUCTOS ---------- */
+function applyFiltersAndRender() {
   const grid = document.getElementById("productGrid");
-  grid.innerHTML = list.map((p, i) => {
-    const tallas = parseTallas(p.tallas);
-    const tallasHTML = tallas.length
-      ? tallas.map(t => `<span class="size-pill">${escapeHTML(t)}</span>`).join("")
-      : `<span class="size-pill">Talla única</span>`;
+  if (!grid) return;
 
-    let precioHTML = '';
-    let etiquetaOfertaHTML = '';
+  let filtered = products;
 
-    if (p.precio_oferta) {
-      precioHTML = `
-        <div class="flex items-center gap-2 mt-1">
-          <span class="text-gold font-mono font-bold text-sm">$${p.precio_oferta}</span>
-          <span class="text-muted font-mono text-xs line-through">$${p.precio}</span>
+  if (currentCategory === "ultima-oportunidad") {
+    filtered = filtered.filter(p => p.precio_oferta || (p.categoria || "").toLowerCase() === "ultima-oportunidad");
+  } else if (currentCategory !== "all") {
+    filtered = filtered.filter(p => (p.categoria || "").toLowerCase() === currentCategory.toLowerCase());
+  }
+
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(p => (p.titulo || "").toLowerCase().includes(q));
+  }
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<p class="col-span-full text-center text-muted font-mono text-xs py-10">No se encontraron piezas en esta categoría.</p>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(p => createProductCardHTML(p)).join("");
+  attachAddToCartEvents(grid);
+}
+
+function createProductCardHTML(p) {
+  let precioHTML = p.precio_oferta 
+    ? `<div class="flex items-center gap-2 mt-1"><span class="text-gold font-mono font-bold">$${p.precio_oferta}</span><span class="text-muted font-mono text-xs line-through">$${p.precio}</span></div>`
+    : `<p class="text-gold font-mono font-bold text-sm mt-1">$${p.precio || 0}</p>`;
+
+  return `
+    <article class="product-card rounded-xl overflow-hidden relative flex flex-col justify-between">
+      <div class="product-card__img-wrap relative">
+        ${p.precio_oferta ? '<span class="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono font-bold px-2 py-0.5 rounded shadow">Liquidación</span>' : ''}
+        <img src="${p.imagen_url}" alt="${p.titulo}" loading="lazy">
+      </div>
+      <div class="p-4 flex flex-col justify-between flex-1 gap-2">
+        <div>
+          <h3 class="font-display font-bold text-sm text-bone">${p.titulo || "Producto"}</h3>
+          <p class="text-[11px] text-muted line-clamp-2 mt-1">${p.detalles || ""}</p>
         </div>
-      `;
-      etiquetaOfertaHTML = `
-        <span class="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono uppercase tracking-wider font-bold px-2 py-0.5 rounded">
-          Oferta
-        </span>
-      `;
-    } else if (p.precio) {
-      precioHTML = `<p class="text-gold font-mono font-bold text-sm mt-1">$${p.precio}</p>`;
-    }
-
-    return `
-      <article class="product-card fade-up relative" style="animation-delay:${Math.min(i * 40, 400)}ms">
-        <div class="product-card__img-wrap relative">
-          ${etiquetaOfertaHTML}
-          <img src="${escapeAttr(p.imagen_url)}" alt="${escapeAttr(p.titulo)}" loading="lazy"
-               onerror="this.src='https://placehold.co/400x533/16151B/C9A227?text=León+Vintage'">
-        </div>
-        <div class="p-4 flex flex-col gap-2 flex-1">
-          <h3 class="font-display font-bold text-base leading-snug">${escapeHTML(p.titulo || "Producto sin nombre")}</h3>
-          <div class="flex flex-wrap">${tallasHTML}</div>
-          <p class="text-xs text-muted leading-relaxed flex-1">${escapeHTML(p.detalles || "")}</p>
+        <div>
           ${precioHTML}
-          <button
-            class="add-to-cart-btn mt-2 w-full py-2.5 rounded-full border border-gold text-gold hover:bg-gold hover:text-onyx font-mono text-[11px] uppercase tracking-[0.15em] font-semibold transition-colors"
-            data-id="${p.id}"
-            data-talla="${escapeAttr(tallas[0] || 'Única')}">
-            Agregar al carrito
+          <button class="add-to-cart-btn mt-3 w-full py-2 rounded-full border border-gold/60 text-gold hover:bg-gold hover:text-onyx font-mono text-[10px] uppercase tracking-wider font-bold transition-all" data-id="${p.id}">
+            Agregar al Carrito
           </button>
         </div>
-      </article>
-    `;
-  }).join("");
+      </div>
+    </article>
+  `;
+}
 
-  document.querySelectorAll(".add-to-cart-btn").forEach(btn => {
+function attachAddToCartEvents(container) {
+  container.querySelectorAll(".add-to-cart-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      addToCart(btn.dataset.id, btn.dataset.talla);
+      addToCart(btn.dataset.id);
       btn.textContent = "¡Agregado!";
-      setTimeout(() => { btn.textContent = "Agregar al carrito"; }, 900);
+      setTimeout(() => { btn.textContent = "Agregar al Carrito"; }, 900);
     });
   });
 }
 
-function escapeHTML(str = "") {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-function escapeAttr(str = "") {
-  return String(str).replace(/"/g, "&quot;");
-}
-
-/* ---------- 4. LÓGICA DEL CARRITO ---------- */
-function addToCart(productId, talla) {
+function addToCart(productId, customPrice = null) {
   const product = products.find(p => String(p.id) === String(productId));
   if (!product) return;
 
-  const existing = cart.find(item => item.id === product.id && item.talla === talla);
-  if (existing) {
-    existing.cantidad += 1;
-  } else {
-    cart.push({
-      id: product.id,
-      titulo: product.titulo,
-      imagen_url: product.imagen_url,
-      talla: talla,
-      cantidad: 1
-    });
-  }
+  const finalPrice = customPrice !== null ? customPrice : (product.precio_oferta || product.precio || 0);
+
+  cart.push({
+    id: product.id,
+    titulo: product.titulo,
+    imagen_url: product.imagen_url,
+    precio: finalPrice,
+    cantidad: 1
+  });
   saveCart();
   openCart();
 }
 
-function changeQty(index, delta) {
-  cart[index].cantidad += delta;
-  if (cart[index].cantidad <= 0) cart.splice(index, 1);
-  saveCart();
+/* ---------- RENDER Y REGALOS EN EL CARRITO ---------- */
+function renderCart() {
+  const container = document.getElementById("cartItemsContainer");
+  const giftRewardText = document.getElementById("giftRewardText");
+  const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+
+  // Lógica dinámica para indicar el regalo por compra
+  if (giftRewardText) {
+    if (totalItems >= 2) {
+      giftRewardText.textContent = "🎉 ¡Felicidades! Se incluirá un obsequio exclusivo en tu paquete.";
+      giftRewardText.className = "font-mono text-xs text-emerald-400 font-bold";
+    } else {
+      giftRewardText.textContent = `🎁 Agrega ${2 - totalItems} prenda más para recibir un accesorio de regalo.`;
+      giftRewardText.className = "font-mono text-xs text-copper font-semibold";
+    }
+  }
+
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = `<p class="text-center text-muted text-xs font-mono py-8">Tu carrito está vacío.</p>`;
+  } else {
+    container.innerHTML = cart.map((item, index) => `
+      <div class="flex items-center gap-3 p-2 border-b border-white/10 bg-white/5 rounded-lg">
+        <img src="${item.imagen_url}" class="w-10 h-12 object-cover rounded">
+        <div class="flex-1">
+          <p class="font-display text-xs text-bone truncate">${item.titulo}</p>
+          <span class="font-mono text-xs text-gold font-bold">$${item.precio}</span>
+        </div>
+        <button onclick="removeItem(${index})" class="text-xs text-muted hover:text-copper font-mono p-1">✕</button>
+      </div>
+    `).join("");
+  }
+
+  const totalBadge = document.getElementById("cartTotalItems");
+  if (totalBadge) totalBadge.textContent = totalItems;
 }
 
 function removeItem(index) {
@@ -174,148 +176,112 @@ function removeItem(index) {
   saveCart();
 }
 
-function cartTotalItems() {
-  return cart.reduce((sum, item) => sum + item.cantidad, 0);
-}
+/* ---------- CREADOR INTERACTIVO DE OUTFIT (15% OFF) ---------- */
+function setupOutfitBuilder() {
+  const grid = document.getElementById("outfitSelectionGrid");
+  if (!grid) return;
 
-function renderCart() {
-  const container = document.getElementById("cartItemsContainer");
-  const emptyMsg = document.getElementById("cartEmptyMsg");
-  const checkoutBtn = document.getElementById("checkoutBtn");
+  grid.innerHTML = products.map(p => `
+    <div class="outfit-card border border-white/10 rounded-lg p-2 cursor-pointer transition-all hover:border-gold bg-white/5" data-id="${p.id}">
+      <img src="${p.imagen_url}" class="w-full h-20 object-cover rounded mb-1">
+      <p class="font-display text-[10px] text-bone truncate">${p.titulo}</p>
+      <span class="font-mono text-[10px] text-gold font-bold">$${p.precio_oferta || p.precio || 0}</span>
+    </div>
+  `).join("");
 
-  if (cart.length === 0) {
-    container.classList.add("hidden");
-    emptyMsg.classList.remove("hidden");
-    checkoutBtn.disabled = true;
-  } else {
-    container.classList.remove("hidden");
-    emptyMsg.classList.add("hidden");
-    checkoutBtn.disabled = false;
-
-    container.innerHTML = cart.map((item, index) => `
-      <div class="cart-line-item">
-        <img src="${escapeAttr(item.imagen_url)}" alt="${escapeAttr(item.titulo)}"
-             onerror="this.src='https://placehold.co/64x80/16151B/C9A227?text=TL'">
-        <div class="flex-1 flex flex-col gap-1">
-          <p class="font-display font-semibold text-sm leading-snug">${escapeHTML(item.titulo)}</p>
-          <span class="size-pill w-fit">Talla ${escapeHTML(item.talla)}</span>
-          <div class="flex items-center gap-2 mt-1">
-            <button class="qty-btn" data-action="dec" data-index="${index}">−</button>
-            <span class="font-mono text-sm w-5 text-center">${item.cantidad}</span>
-            <button class="qty-btn" data-action="inc" data-index="${index}">+</button>
-            <button class="ml-auto text-[11px] font-mono uppercase text-muted hover:text-copper transition-colors" data-action="remove" data-index="${index}">
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-    `).join("");
-
-    container.querySelectorAll("[data-action]").forEach(btn => {
-      const index = Number(btn.dataset.index);
-      btn.addEventListener("click", () => {
-        const action = btn.dataset.action;
-        if (action === "inc") changeQty(index, 1);
-        if (action === "dec") changeQty(index, -1);
-        if (action === "remove") removeItem(index);
-      });
+  grid.querySelectorAll(".outfit-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const id = card.dataset.id;
+      if (selectedOutfitItems.includes(id)) {
+        selectedOutfitItems = selectedOutfitItems.filter(item => item !== id);
+        card.classList.remove("border-gold", "bg-gold/20");
+      } else {
+        selectedOutfitItems.push(id);
+        card.classList.add("border-gold", "bg-gold/20");
+      }
+      updateOutfitSummary();
     });
-  }
-
-  document.getElementById("cartTotalItems").textContent = cartTotalItems();
-}
-
-function updateCartBadges() {
-  const total = cartTotalItems();
-  [document.getElementById("cartCount"), document.getElementById("floatingCartCount")].forEach(badge => {
-    badge.textContent = total;
-    badge.classList.toggle("hidden", total === 0);
-    badge.classList.toggle("flex", total > 0);
   });
 }
 
-/* ---------- 5. DRAWER DEL CARRITO ---------- */
-function openCart() {
-  document.getElementById("cartDrawer").classList.add("cart-open");
-  document.getElementById("cartOverlay").classList.remove("hidden");
-}
-function closeCart() {
-  document.getElementById("cartDrawer").classList.remove("cart-open");
-  document.getElementById("cartOverlay").classList.add("hidden");
-}
+function updateOutfitSummary() {
+  let subtotal = 0;
+  selectedOutfitItems.forEach(id => {
+    const p = products.find(prod => String(prod.id) === String(id));
+    if (p) subtotal += Number(p.precio_oferta || p.precio || 0);
+  });
 
-document.getElementById("cartBtn").addEventListener("click", openCart);
-document.getElementById("floatingCartBtn").addEventListener("click", openCart);
-document.getElementById("closeCartBtn").addEventListener("click", closeCart);
-document.getElementById("cartOverlay").addEventListener("click", closeCart);
+  const hasDiscount = selectedOutfitItems.length >= 2;
+  const finalTotal = hasDiscount ? subtotal * 0.85 : subtotal;
 
-/* ---------- 6. CHECKOUT VÍA WHATSAPP ---------- */
-function buildWhatsAppMessage() {
-  const lines = cart.map(item => `- ${item.cantidad}x ${item.titulo} (Talla ${item.talla})`);
-  return `¡Hola, León Vintage! Me interesa dominar mi estilo con el siguiente pedido:\n${lines.join("\n")}\n¿Tienen disponibilidad para coordinar el pago?`;
+  document.getElementById("outfitTotal").textContent = `$${finalTotal.toFixed(2)}`;
+  document.getElementById("outfitDiscountNotice").classList.toggle("hidden", !hasDiscount);
+  
+  const addBtn = document.getElementById("addOutfitToCartBtn");
+  if (addBtn) addBtn.disabled = selectedOutfitItems.length === 0;
 }
 
-document.getElementById("checkoutBtn").addEventListener("click", () => {
-  if (cart.length === 0) return;
-  const message = encodeURIComponent(buildWhatsAppMessage());
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-  window.open(url, "_blank", "noopener");
+document.getElementById("addOutfitToCartBtn")?.addEventListener("click", () => {
+  const hasDiscount = selectedOutfitItems.length >= 2;
+  selectedOutfitItems.forEach(id => {
+    const p = products.find(prod => String(prod.id) === String(id));
+    if (p) {
+      const basePrice = p.precio_oferta || p.precio || 0;
+      const price = hasDiscount ? basePrice * 0.85 : basePrice;
+      addToCart(p.id, price.toFixed(2));
+    }
+  });
+  selectedOutfitItems = [];
+  document.getElementById("outfitModal").classList.add("hidden");
 });
 
-/* ---------- 7. INICIO ---------- */
-document.getElementById("year").textContent = new Date().getFullYear();
+/* ---------- LISTENERS Y EVENTOS GLOBALES ---------- */
+document.getElementById("openOutfitBuilderBtn")?.addEventListener("click", () => {
+  document.getElementById("outfitModal").classList.remove("hidden");
+});
+
+document.getElementById("closeOutfitBtn")?.addEventListener("click", () => {
+  document.getElementById("outfitModal").classList.add("hidden");
+});
+
+document.querySelectorAll("#categoryFilters .cat-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#categoryFilters .cat-btn").forEach(b => {
+      b.classList.remove("active", "bg-gold", "text-onyx");
+      b.classList.add("text-muted");
+    });
+    btn.classList.add("active", "bg-gold", "text-onyx");
+    btn.classList.remove("text-muted");
+
+    currentCategory = btn.dataset.cat;
+    applyFiltersAndRender();
+  });
+});
+
+document.getElementById("searchInput")?.addEventListener("input", (e) => {
+  searchQuery = e.target.value;
+  applyFiltersAndRender();
+});
+
+function openCart() { document.getElementById("cartDrawer")?.classList.add("cart-open"); }
+function closeCart() { document.getElementById("cartDrawer")?.classList.remove("cart-open"); }
+
+document.getElementById("openCartBtn")?.addEventListener("click", openCart);
+document.getElementById("closeCartBtn")?.addEventListener("click", closeCart);
+
+/* ---------- CHECKOUT HACIA WHATSAPP ---------- */
+document.getElementById("checkoutBtn")?.addEventListener("click", () => {
+  if (cart.length === 0) return;
+
+  const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
+  const giftNote = totalItems >= 2 ? "\n\n🎁 *¡Califica para obsequio de accesorio en su paquete!*" : "";
+  const lines = cart.map(item => `• 1x ${item.titulo} — *$${item.precio}*`);
+  
+  const message = encodeURIComponent(`¡Hola, León Vintage! Me interesa adquirir este pedido:\n\n${lines.join("\n")}${giftNote}\n\nQuedo a la espera para acordar el pago y la entrega.`);
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+});
+
+/* Inicialización */
+loadProducts();
 renderCart();
 updateCartBadges();
-loadProducts();
-
-/* ---------- 8. VISTA PREVIA DE IMAGEN (MODAL) ---------- */
-const imageModal = document.getElementById("imageModal");
-const modalImg = document.getElementById("modalImg");
-const closeModalBtn = document.getElementById("closeModalBtn");
-
-const productGrid = document.getElementById("productGrid");
-if (productGrid) {
-  productGrid.addEventListener("click", (e) => {
-    const clickedImg = e.target.closest(".product-card__img-wrap img") || e.target.closest("article img");
-    
-    if (clickedImg) {
-      e.preventDefault(); 
-      const src = clickedImg.getAttribute("src");
-      const alt = clickedImg.getAttribute("alt");
-      
-      if (src && !src.includes("placehold.co")) {
-        modalImg.src = src;
-        modalImg.alt = alt || "León Vintage";
-        imageModal.classList.add("active");
-        document.body.classList.add("overflow-hidden");
-      }
-    }
-  });
-}
-
-function closeImageModal() {
-  if (imageModal) {
-    imageModal.classList.remove("active");
-    document.body.classList.remove("overflow-hidden");
-    setTimeout(() => {
-      modalImg.src = ""; 
-    }, 300);
-  }
-}
-
-if (closeModalBtn) {
-  closeModalBtn.addEventListener("click", closeImageModal);
-}
-if (imageModal) {
-  imageModal.addEventListener("click", (e) => {
-    if (e.target === imageModal) {
-      closeImageModal();
-    }
-  });
-}
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && imageModal && imageModal.classList.contains("active")) {
-    closeImageModal();
-  }
-});
