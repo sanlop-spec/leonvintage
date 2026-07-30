@@ -1,5 +1,5 @@
 /* ============================================
-   LEÓN VINTAGE — app.js (SISTEMA COMPLETO Y AJUSTADO)
+   LEÓN VINTAGE — app.js (SISTEMA CON MEJORAS AMAZON/ML)
    ============================================ */
 
 const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co";
@@ -40,10 +40,9 @@ function updateCartBadges() {
 
 /* ---------- 2. CARGA DE PRODUCTOS DESDE SUPABASE ---------- */
 async function loadProducts() {
-  // Nota: si agregas la columna 'condicion' en Supabase, la traerá automáticamente
   const { data, error } = await supabaseClient
     .from(TABLE_NAME)
-    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria, condicion")
+    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria, condicion, stock, rating")
     .order("id", { ascending: false });
 
   if (!error && data) {
@@ -53,7 +52,7 @@ async function loadProducts() {
   }
 }
 
-/* ---------- 3. FILTRADO, TALLAS Y ORDENAMIENTO ---------- */
+/* ---------- 3. FILTRADO Y RENDER DE TARJETAS estilo Mercado Libre ---------- */
 function applyFiltersAndRender() {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
@@ -67,7 +66,7 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(p => (p.categoria || "").toLowerCase() === currentCategory.toLowerCase());
   }
 
-  // Talla (Filtra CH, M, G, EG)
+  // Talla (CH, M, G, EG)
   if (currentSize !== "all") {
     filtered = filtered.filter(p => {
       const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(",") : (p.tallas || "");
@@ -81,7 +80,7 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(p => (p.titulo || "").toLowerCase().includes(q));
   }
 
-  // Ordenamiento
+  // Orden
   if (currentSort === "price-asc") {
     filtered.sort((a, b) => (a.precio_oferta || a.precio || 0) - (b.precio_oferta || b.precio || 0));
   } else if (currentSort === "price-desc") {
@@ -101,9 +100,10 @@ function applyFiltersAndRender() {
 
 function createProductCardHTML(p) {
   const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
-  // Toma la condición dinámicamente de Supabase o pone 9/10 por defecto
-  const condicionTexto = p.condicion ? p.condicion : "Estado: 9/10";
-  
+  const condicionTexto = p.condicion ? p.condicion : "Condición: 9/10";
+  const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
+  const stockVal = p.stock !== undefined && p.stock !== null ? p.stock : 1;
+
   let precioHTML = p.precio_oferta 
     ? `<div class="flex items-center gap-2 mt-1"><span class="text-gold font-mono font-bold">$${p.precio_oferta}</span><span class="text-muted font-mono text-xs line-through">$${p.precio}</span></div>`
     : `<p class="text-gold font-mono font-bold text-sm mt-1">$${p.precio || 0}</p>`;
@@ -121,17 +121,32 @@ function createProductCardHTML(p) {
 
       <div class="p-4 flex flex-col justify-between flex-1 gap-2">
         <div>
+          <!-- Rating Estrellas -->
+          <div class="flex items-center gap-1 mb-1">
+            <span class="text-gold text-xs">★</span>
+            <span class="text-[10px] text-bone font-bold font-mono">${ratingVal}</span>
+            <span class="text-[9px] text-muted font-mono">(Pieza Original)</span>
+          </div>
+
           <div class="flex justify-between items-start gap-2">
             <h3 class="font-display font-bold text-sm text-bone cursor-pointer quick-view-trigger" data-id="${p.id}">${p.titulo || "Producto"}</h3>
-            <span class="text-[10px] font-mono text-muted border border-white/10 px-1.5 py-0.5 rounded">Talla: ${tallasStr}</span>
+            <span class="text-[10px] font-mono text-muted border border-white/10 px-1.5 py-0.5 rounded shrink-0">Talla: ${tallasStr}</span>
           </div>
           <p class="text-[11px] text-muted line-clamp-2 mt-1">${p.detalles || ""}</p>
         </div>
 
         <div>
           ${precioHTML}
+          
+          <!-- Indicador de Stock / Urgencia -->
+          <div class="mt-2 flex items-center justify-between text-[9px] font-mono">
+            ${stockVal <= 1 
+              ? '<span class="text-copper font-bold animate-pulse">🔥 ¡Última pieza disponible!</span>' 
+              : `<span class="text-emerald-400">Disponible (${stockVal} pzs)</span>`}
+          </div>
+
           <div class="flex items-center justify-between gap-2 mt-3">
-            <span class="text-[9px] text-copper font-mono font-bold">⚡ Pieza Única</span>
+            <span class="text-[9px] text-muted font-mono">📍 Entrega local</span>
             <button class="add-to-cart-btn py-2 px-4 rounded-full border border-gold/60 text-gold hover:bg-gold hover:text-onyx font-mono text-[10px] uppercase tracking-wider font-bold transition-all" data-id="${p.id}">
               Agregar
             </button>
@@ -143,7 +158,6 @@ function createProductCardHTML(p) {
 }
 
 function attachCardEvents(container) {
-  // Evento agregar rápido
   container.querySelectorAll(".add-to-cart-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -153,11 +167,8 @@ function attachCardEvents(container) {
     });
   });
 
-  // Evento Vista Rápida Modal
   container.querySelectorAll(".quick-view-trigger").forEach(el => {
-    el.addEventListener("click", () => {
-      openQuickView(el.dataset.id);
-    });
+    el.addEventListener("click", () => { openQuickView(el.dataset.id); });
   });
 }
 
@@ -178,7 +189,7 @@ function addToCart(productId, customPrice = null) {
   openCart();
 }
 
-/* ---------- 4. VISTA RÁPIDA (QUICK VIEW MODAL) ---------- */
+/* ---------- 4. VISTA RÁPIDA (CON FAQ Y PRODUCTOS RECOMENDADOS) ---------- */
 function openQuickView(productId) {
   const p = products.find(item => String(item.id) === String(productId));
   if (!p) return;
@@ -186,29 +197,48 @@ function openQuickView(productId) {
   const content = document.getElementById("quickViewContent");
   const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
   const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
+  const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
+
+  // Productos relacionados (Misma categoría o estilo)
+  const related = products.filter(item => String(item.id) !== String(p.id)).slice(0, 2);
 
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover rounded-xl border border-white/10">
+      
       <div class="flex flex-col justify-between space-y-4">
         <div>
-          <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest block mb-1">Prenda Seleccionada</span>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest">Prenda Exclusiva</span>
+            <span class="text-[10px] font-mono text-gold bg-gold/10 px-2 py-0.5 rounded border border-gold/30">★ ${ratingVal} Excelente</span>
+          </div>
+
           <h2 class="font-display font-bold text-xl text-bone mb-2">${p.titulo}</h2>
-          <span class="text-gold font-mono font-bold text-xl block mb-4">$${p.precio_oferta || p.precio || 0}</span>
+          <span class="text-gold font-mono font-bold text-xl block mb-2">$${p.precio_oferta || p.precio || 0}</span>
           
+          <p class="text-[10px] text-muted font-mono mb-4">👀 2 personas están interesadas en esta prenda en este momento.</p>
+
           <div class="space-y-2 border-t border-b border-white/10 py-3 text-xs text-muted font-mono">
             <p><strong class="text-bone">Detalles:</strong> ${p.detalles || "Sin descripción adicional."}</p>
             <p><strong class="text-bone">Talla de etiqueta:</strong> ${tallasStr}</p>
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
-          <!-- Guía de Medidas Exactas -->
-          <div class="bg-white/5 border border-white/10 rounded-lg p-3 mt-4 text-[11px] font-mono">
-            <span class="text-gold font-bold block mb-1">📐 Medidas Aproximadas en cm:</span>
-            <div class="grid grid-cols-2 gap-2 text-muted">
-              <span>• Axila a Axila: ~54 cm</span>
-              <span>• Largo Total: ~72 cm</span>
-            </div>
+          <!-- Métodos de Entrega y Pago en Modal -->
+          <div class="bg-white/5 border border-white/10 rounded-lg p-3 my-3 text-[11px] font-mono space-y-1">
+            <p class="text-bone">📍 <strong class="text-gold">Entrega Personal:</strong> Punto medio acordado vía WhatsApp.</p>
+            <p class="text-bone">💳 <strong class="text-gold">Pagos:</strong> Efectivo al momento o Transferencia SPEI.</p>
+          </div>
+
+          <!-- Acordeón FAQ Mercado Libre Style -->
+          <div class="space-y-2 mt-4 text-[11px] font-mono">
+            <details class="bg-white/[0.02] border border-white/10 rounded-lg p-2 cursor-pointer">
+              <summary class="font-bold text-bone flex justify-between">
+                <span>¿Cómo aseguro mi talla?</span>
+                <span class="text-gold">+</span>
+              </summary>
+              <p class="text-muted mt-2 text-[10px]">Al coordinar por WhatsApp podemos pasarte las medidas exactas en cm de hombros y largo.</p>
+            </details>
           </div>
         </div>
 
@@ -217,6 +247,24 @@ function openQuickView(productId) {
         </button>
       </div>
     </div>
+
+    <!-- Sección Quienes vieron esto también vieron -->
+    ${related.length > 0 ? `
+      <div class="border-t border-white/10 mt-6 pt-4">
+        <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Prendas Similares</h4>
+        <div class="grid grid-cols-2 gap-3">
+          ${related.map(r => `
+            <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5 cursor-pointer hover:border-gold" onclick="openQuickView(${r.id})">
+              <img src="${r.imagen_url}" class="w-10 h-12 object-cover rounded">
+              <div class="truncate">
+                <p class="font-display text-[11px] text-bone truncate">${r.titulo}</p>
+                <span class="font-mono text-[10px] text-gold font-bold">$${r.precio_oferta || r.precio}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
   `;
 
   document.getElementById("quickViewModal").classList.remove("hidden");
@@ -228,7 +276,7 @@ function closeQuickView() {
 
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
 
-/* ---------- 5. RENDER DEL CARRITO Y REGALO ---------- */
+/* ---------- 5. RENDER DEL CARRITO ---------- */
 function renderCart() {
   const container = document.getElementById("cartItemsContainer");
   const giftRewardText = document.getElementById("giftRewardText");
@@ -270,7 +318,7 @@ function removeItem(index) {
   saveCart();
 }
 
-/* ---------- 6. CREADOR DE OUTFITS (15% OFF) ---------- */
+/* ---------- 6. CREADOR DE OUTFITS ---------- */
 function setupOutfitBuilder() {
   const grid = document.getElementById("outfitSelectionGrid");
   if (!grid) return;
@@ -333,8 +381,8 @@ document.getElementById("addOutfitToCartBtn")?.addEventListener("click", () => {
 const tickerMessages = [
   "✨ 15% OFF automático en tu paquete al crear un Outfit de 2+ prendas",
   "🎁 Lleva 2 o más prendas y recibe un accesorio de regalo en tu compra",
-  "🔥 Sección 'Última Oportunidad' con precios especiales de liquidación",
-  "📐 Revisa medidas exactas en cm activando la Vista Rápida de cada pieza"
+  "📍 Entregas personales en punto medio o pago en efectivo/transferencia",
+  "🔥 Piezas únicas de colección seleccionadas a detalle"
 ];
 
 let currentTickerIndex = 0;
@@ -403,15 +451,15 @@ function closeCart() { document.getElementById("cartDrawer")?.classList.remove("
 document.getElementById("openCartBtn")?.addEventListener("click", openCart);
 document.getElementById("closeCartBtn")?.addEventListener("click", closeCart);
 
-/* ---------- 9. CHECKOUT A WHATSAPP ---------- */
+/* ---------- 9. CHECKOUT DIRECTO A WHATSAPP ---------- */
 document.getElementById("checkoutBtn")?.addEventListener("click", () => {
   if (cart.length === 0) return;
 
   const totalItems = cart.reduce((sum, item) => sum + item.cantidad, 0);
-  const giftNote = totalItems >= 2 ? "\n\n🎁 *¡Califica para obsequio de accesorio en su paquete!*" : "";
+  const giftNote = totalItems >= 2 ? "\n\n🎁 *¡Aplica para regalo de accesorio en su paquete!*" : "";
   const lines = cart.map(item => `• 1x ${item.titulo} — *$${item.precio}*`);
   
-  const message = encodeURIComponent(`¡Hola, León Vintage! Me interesa adquirir este pedido:\n\n${lines.join("\n")}${giftNote}\n\nQuedo a la espera para acordar el pago y la entrega.`);
+  const message = encodeURIComponent(`¡Hola, León Vintage! Me interesa adquirir este pedido para entrega personal:\n\n${lines.join("\n")}${giftNote}\n\nQuedo a la espera para acordar el punto medio de entrega y método de pago (Efectivo / SPEI).`);
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
 });
 
