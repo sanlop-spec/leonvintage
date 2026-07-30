@@ -1,5 +1,5 @@
 /* ============================================
-   LEÓN VINTAGE — app.js (SISTEMA COMPLETO PRO)
+   LEÓN VINTAGE — app.js (SISTEMA COMPLETO Y AJUSTADO)
    ============================================ */
 
 const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co";
@@ -40,9 +40,10 @@ function updateCartBadges() {
 
 /* ---------- 2. CARGA DE PRODUCTOS DESDE SUPABASE ---------- */
 async function loadProducts() {
+  // Nota: si agregas la columna 'condicion' en Supabase, la traerá automáticamente
   const { data, error } = await supabaseClient
     .from(TABLE_NAME)
-    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria")
+    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria, condicion")
     .order("id", { ascending: false });
 
   if (!error && data) {
@@ -66,7 +67,7 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(p => (p.categoria || "").toLowerCase() === currentCategory.toLowerCase());
   }
 
-  // Talla
+  // Talla (Filtra CH, M, G, EG)
   if (currentSize !== "all") {
     filtered = filtered.filter(p => {
       const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(",") : (p.tallas || "");
@@ -90,7 +91,7 @@ function applyFiltersAndRender() {
   }
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<p class="col-span-full text-center text-muted font-mono text-xs py-10">No se encontraron piezas con los filtros seleccionados.</p>`;
+    grid.innerHTML = `<p class="col-span-full text-center text-muted font-mono text-xs py-10">No se encontraron prendas con los filtros seleccionados.</p>`;
     return;
   }
 
@@ -100,6 +101,8 @@ function applyFiltersAndRender() {
 
 function createProductCardHTML(p) {
   const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
+  // Toma la condición dinámicamente de Supabase o pone 9/10 por defecto
+  const condicionTexto = p.condicion ? p.condicion : "Estado: 9/10";
   
   let precioHTML = p.precio_oferta 
     ? `<div class="flex items-center gap-2 mt-1"><span class="text-gold font-mono font-bold">$${p.precio_oferta}</span><span class="text-muted font-mono text-xs line-through">$${p.precio}</span></div>`
@@ -108,8 +111,8 @@ function createProductCardHTML(p) {
   return `
     <article class="product-card rounded-xl overflow-hidden relative flex flex-col justify-between">
       <div class="product-card__img-wrap relative cursor-pointer quick-view-trigger" data-id="${p.id}">
-        ${p.precio_oferta ? '<span class="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono font-bold px-2 py-0.5 rounded shadow z-10">Oferta Vault</span>' : ''}
-        <span class="absolute top-2 right-2 bg-black/70 backdrop-blur-md text-gold text-[9px] font-mono font-bold px-2 py-0.5 rounded z-10 border border-gold/30">Condición 9.5/10</span>
+        ${p.precio_oferta ? '<span class="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono font-bold px-2 py-0.5 rounded shadow z-10">En Oferta</span>' : ''}
+        <span class="absolute top-2 right-2 bg-black/70 backdrop-blur-md text-gold text-[9px] font-mono font-bold px-2 py-0.5 rounded z-10 border border-gold/30">${condicionTexto}</span>
         <img src="${p.imagen_url}" alt="${p.titulo}" loading="lazy">
         <div class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
           <span class="bg-onyx/90 border border-gold text-gold font-mono text-[10px] uppercase font-bold px-3 py-1.5 rounded-full">🔍 Vista Rápida</span>
@@ -182,20 +185,21 @@ function openQuickView(productId) {
 
   const content = document.getElementById("quickViewContent");
   const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
+  const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
 
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover rounded-xl border border-white/10">
       <div class="flex flex-col justify-between space-y-4">
         <div>
-          <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest block mb-1">Pieza de Colección Archivo</span>
+          <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest block mb-1">Prenda Seleccionada</span>
           <h2 class="font-display font-bold text-xl text-bone mb-2">${p.titulo}</h2>
           <span class="text-gold font-mono font-bold text-xl block mb-4">$${p.precio_oferta || p.precio || 0}</span>
           
           <div class="space-y-2 border-t border-b border-white/10 py-3 text-xs text-muted font-mono">
             <p><strong class="text-bone">Detalles:</strong> ${p.detalles || "Sin descripción adicional."}</p>
             <p><strong class="text-bone">Talla de etiqueta:</strong> ${tallasStr}</p>
-            <p><strong class="text-bone">Estado / Condición:</strong> 9.5/10 (Excelente estado vintage)</p>
+            <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
           <!-- Guía de Medidas Exactas -->
