@@ -308,24 +308,44 @@ function closeQuickView() {
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
 
 /* ---------- 5. MODAL DE ZOOM DE IMAGEN ---------- */
+/* ---------- 5. MODAL DE ZOOM DE IMAGEN (PANTALLA COMPLETA) ---------- */
 function openImageZoom(imgUrl) {
-  const modal = document.getElementById("imageZoomModal");
-  const img = document.getElementById("zoomedImage");
-  if (!modal || !img) return;
+  let modal = document.getElementById("imageZoomModal");
+  
+  // Si no existe el elemento en el HTML, lo creamos dinámicamente sobre la marcha
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "imageZoomModal";
+    modal.className = "fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out hidden";
+    modal.innerHTML = `
+      <button id="closeZoomBtn" class="absolute top-5 right-5 text-gold hover:text-white font-mono text-2xl font-bold bg-onyx/80 border border-gold/30 rounded-full w-12 h-12 flex items-center justify-center z-[101] transition-all">✕</button>
+      <div class="relative max-w-4xl max-h-[90vh] flex items-center justify-center">
+        <img id="zoomedImage" src="" class="max-w-full max-h-[85vh] object-contain rounded-xl border border-gold/20 shadow-2xl transition-transform duration-300 scale-95 hover:scale-100">
+      </div>
+    `;
+    document.body.appendChild(modal);
 
-  img.src = imgUrl;
+    modal.addEventListener("click", (e) => {
+      if (e.target.id === "imageZoomModal" || e.target.id === "closeZoomBtn") {
+        closeImageZoom();
+      }
+    });
+  }
+
+  const img = document.getElementById("zoomedImage");
+  if (img) img.src = imgUrl;
+
   modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden"; // Evita que la página del fondo haga scroll
 }
 
 function closeImageZoom() {
-  document.getElementById("imageZoomModal")?.classList.add("hidden");
-}
-
-document.getElementById("imageZoomModal")?.addEventListener("click", (e) => {
-  if (e.target.id === "imageZoomModal" || e.target.id === "closeZoomBtn") {
-    closeImageZoom();
+  const modal = document.getElementById("imageZoomModal");
+  if (modal) {
+    modal.classList.add("hidden");
+    document.body.style.overflow = "auto"; // Devuelve el scroll normal
   }
-});
+}
 
 /* ---------- 6. RENDER DEL CARRITO ---------- */
 function renderCart() {
