@@ -190,6 +190,7 @@ function addToCart(productId, customPrice = null) {
 }
 
 /* ---------- 4. VISTA RÁPIDA (CON MEDIDAS Y ZOOM DE IMAGEN) ---------- */
+/* ---------- VISTA RÁPIDA (SOLO MOSTRAR MEDIDAS SI EXISTEN EN SUPABASE) ---------- */
 function openQuickView(productId) {
   const p = products.find(item => String(item.id) === String(productId));
   if (!p) return;
@@ -199,10 +200,34 @@ function openQuickView(productId) {
   const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
 
-  // Medidas en cm (si existen en DB, o valores estándar de referencia)
-  const ancho = p.medida_ancho || "54 cm";
-  const largo = p.medida_largo || "68 cm";
-  const manga = p.medida_manga || "60 cm";
+  // Comprobamos si existe al menos una medida llenada en Supabase
+  const hasMedidas = p.medida_ancho || p.medida_largo || p.medida_manga;
+
+  // Si existen medidas, construimos la cajita HTML; si no, se queda vacía ("")
+  const medidasHTML = hasMedidas ? `
+    <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
+      <div class="flex items-center justify-between text-xs font-mono">
+        <span class="text-gold font-bold flex items-center gap-1">📏 Medidas Exactas:</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono pt-1">
+        ${p.medida_ancho ? `
+          <div class="bg-onyx p-1.5 rounded border border-white/5">
+            <span class="text-muted block">Ancho (Axila-Axila)</span>
+            <span class="text-bone font-bold">${p.medida_ancho}</span>
+          </div>` : ''}
+        ${p.medida_largo ? `
+          <div class="bg-onyx p-1.5 rounded border border-white/5">
+            <span class="text-muted block">Largo (Hombro-Base)</span>
+            <span class="text-bone font-bold">${p.medida_largo}</span>
+          </div>` : ''}
+        ${p.medida_manga ? `
+          <div class="bg-onyx p-1.5 rounded border border-white/5">
+            <span class="text-muted block">Manga / Caída</span>
+            <span class="text-bone font-bold">${p.medida_manga}</span>
+          </div>` : ''}
+      </div>
+    </div>
+  ` : '';
 
   const related = products.filter(item => String(item.id) !== String(p.id)).slice(0, 2);
 
@@ -234,26 +259,8 @@ function openQuickView(productId) {
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
-          <!-- SECCIÓN DE MEDIDAS EXACTAS EN CM -->
-          <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="text-gold font-bold flex items-center gap-1">📏 Medidas Exactas (Plano de prenda):</span>
-            </div>
-            <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono pt-1">
-              <div class="bg-onyx p-1.5 rounded border border-white/5">
-                <span class="text-muted block">Ancho (Axila-Axila)</span>
-                <span class="text-bone font-bold">${ancho}</span>
-              </div>
-              <div class="bg-onyx p-1.5 rounded border border-white/5">
-                <span class="text-muted block">Largo (Hombro-Base)</span>
-                <span class="text-bone font-bold">${largo}</span>
-              </div>
-              <div class="bg-onyx p-1.5 rounded border border-white/5">
-                <span class="text-muted block">Manga / Caída</span>
-                <span class="text-bone font-bold">${manga}</span>
-              </div>
-            </div>
-          </div>
+          <!-- SECCIÓN DE MEDIDAS (SOLO SI TIENEN VALOR EN SUPABASE) -->
+          ${medidasHTML}
 
           <!-- Métodos de Entrega y Pago -->
           <div class="bg-white/5 border border-white/10 rounded-lg p-3 my-3 text-[11px] font-mono space-y-1">
@@ -299,6 +306,7 @@ function openQuickView(productId) {
   `;
 
   document.getElementById("quickViewModal").classList.remove("hidden");
+}
 }
 
 function closeQuickView() {
