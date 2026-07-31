@@ -23,7 +23,7 @@ function loadCart() {
   try {
     const raw = localStorage.getItem("tienda_leon_cart");
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (e) {
     return [];
   }
 }
@@ -68,7 +68,7 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(p => (p.categoria || "").toLowerCase() === currentCategory.toLowerCase());
   }
 
-  // Talla (CH, M, G, EG)
+  // Talla
   if (currentSize !== "all") {
     filtered = filtered.filter(p => {
       const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(",") : (p.tallas || "");
@@ -189,50 +189,64 @@ function addToCart(productId, customPrice = null) {
   openCart();
 }
 
-/* ---------- 4. VISTA RÁPIDA (MEDIDAS SOLO SI EXISTEN EN SUPABASE) ---------- */
+/* ---------- 4. VISTA RÁPIDA ---------- */
 function openQuickView(productId) {
   const p = products.find(item => String(item.id) === String(productId));
   if (!p) return;
 
   const content = document.getElementById("quickViewContent");
+  if (!content) return;
+
   const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
   const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
 
-  // Verificar si hay medidas especificadas en Supabase
   const hasMedidas = p.medida_ancho || p.medida_largo || p.medida_manga;
 
-  // Si no hay medidas, no renderizamos el bloque HTML
-  const medidasHTML = hasMedidas ? `
-    <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
-      <div class="flex items-center justify-between text-xs font-mono">
-        <span class="text-gold font-bold flex items-center gap-1">📏 Medidas Exactas:</span>
+  let medidasHTML = "";
+  if (hasMedidas) {
+    let anchoHTML = p.medida_ancho ? `<div class="bg-onyx p-1.5 rounded border border-white/5"><span class="text-muted block">Ancho (Axila-Axila)</span><span class="text-bone font-bold">${p.medida_ancho}</span></div>` : "";
+    let largoHTML = p.medida_largo ? `<div class="bg-onyx p-1.5 rounded border border-white/5"><span class="text-muted block">Largo (Hombro-Base)</span><span class="text-bone font-bold">${p.medida_largo}</span></div>` : "";
+    let mangaHTML = p.medida_manga ? `<div class="bg-onyx p-1.5 rounded border border-white/5"><span class="text-muted block">Manga / Caída</span><span class="text-bone font-bold">${p.medida_manga}</span></div>` : "";
+
+    medidasHTML = `
+      <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-gold font-bold flex items-center gap-1">📏 Medidas Exactas:</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono pt-1">
+          ${anchoHTML}
+          ${largoHTML}
+          ${mangaHTML}
+        </div>
       </div>
-      <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono pt-1">
-        ${p.medida_ancho ? `
-          <div class="bg-onyx p-1.5 rounded border border-white/5">
-            <span class="text-muted block">Ancho (Axila-Axila)</span>
-            <span class="text-bone font-bold">${p.medida_ancho}</span>
-          </div>` : ''}
-        ${p.medida_largo ? `
-          <div class="bg-onyx p-1.5 rounded border border-white/5">
-            <span class="text-muted block">Largo (Hombro-Base)</span>
-            <span class="text-bone font-bold">${p.medida_largo}</span>
-          </div>` : ''}
-        ${p.medida_manga ? `
-          <div class="bg-onyx p-1.5 rounded border border-white/5">
-            <span class="text-muted block">Manga / Caída</span>
-            <span class="text-bone font-bold">${p.medida_manga}</span>
-          </div>` : ''}
-      </div>
-    </div>
-  ` : '';
+    `;
+  }
 
   const related = products.filter(item => String(item.id) !== String(p.id)).slice(0, 2);
 
+  let relatedHTML = "";
+  if (related.length > 0) {
+    const items = related.map(r => `
+      <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5 cursor-pointer hover:border-gold" onclick="openQuickView(${r.id})">
+        <img src="${r.imagen_url}" class="w-10 h-12 object-cover rounded">
+        <div class="truncate">
+          <p class="font-display text-[11px] text-bone truncate">${r.titulo}</p>
+          <span class="font-mono text-[10px] text-gold font-bold">$${r.precio_oferta || r.precio}</span>
+        </div>
+      </div>
+    `).join("");
+
+    relatedHTML = `
+      <div class="border-t border-white/10 mt-6 pt-4">
+        <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Prendas Similares</h4>
+        <div class="grid grid-cols-2 gap-3">${items}</div>
+      </div>
+    `;
+  }
+
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Imagen de producto con Zoom -->
       <div class="relative group cursor-zoom-in overflow-hidden rounded-xl border border-white/10" onclick="openImageZoom('${p.imagen_url}')">
         <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover transition-transform duration-500 group-hover:scale-105">
         <div class="absolute bottom-3 right-3 bg-onyx/80 backdrop-blur-md text-gold text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-gold/30 flex items-center gap-1 shadow-lg">
@@ -258,16 +272,13 @@ function openQuickView(productId) {
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
-          <!-- RENDER DINÁMICO DE MEDIDAS -->
           ${medidasHTML}
 
-          <!-- Métodos de Entrega y Pago -->
           <div class="bg-white/5 border border-white/10 rounded-lg p-3 my-3 text-[11px] font-mono space-y-1">
             <p class="text-bone">📍 <strong class="text-gold">Entrega Personal:</strong> Punto medio acordado vía WhatsApp.</p>
             <p class="text-bone">💳 <strong class="text-gold">Pagos:</strong> Efectivo al momento o Transferencia SPEI.</p>
           </div>
 
-          <!-- FAQ Acordeón -->
           <div class="space-y-2 my-2 text-[11px] font-mono">
             <details class="bg-white/[0.02] border border-white/10 rounded-lg p-2 cursor-pointer">
               <summary class="font-bold text-bone flex justify-between">
@@ -284,24 +295,7 @@ function openQuickView(productId) {
         </button>
       </div>
     </div>
-
-    <!-- Prendas Similares -->
-    ${related.length > 0 ? `
-      <div class="border-t border-white/10 mt-6 pt-4">
-        <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Prendas Similares</h4>
-        <div class="grid grid-cols-2 gap-3">
-          ${related.map(r => `
-            <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/5 cursor-pointer hover:border-gold" onclick="openQuickView(${r.id})">
-              <img src="${r.imagen_url}" class="w-10 h-12 object-cover rounded">
-              <div class="truncate">
-                <p class="font-display text-[11px] text-bone truncate">${r.titulo}</p>
-                <span class="font-mono text-[10px] text-gold font-bold">$${r.precio_oferta || r.precio}</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    ` : ''}
+    ${relatedHTML}
   `;
 
   document.getElementById("quickViewModal")?.classList.remove("hidden");
@@ -313,7 +307,7 @@ function closeQuickView() {
 
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
 
-/* ---------- 5. CONTROL DEL MODAL DE ZOOM / PANTALLA COMPLETA ---------- */
+/* ---------- 5. MODAL DE ZOOM DE IMAGEN ---------- */
 function openImageZoom(imgUrl) {
   const modal = document.getElementById("imageZoomModal");
   const img = document.getElementById("zoomedImage");
@@ -333,7 +327,7 @@ document.getElementById("imageZoomModal")?.addEventListener("click", (e) => {
   }
 });
 
-/* ---------- 6. RENDER DEL CARRITO DE COMPRAS ---------- */
+/* ---------- 6. RENDER DEL CARRITO ---------- */
 function renderCart() {
   const container = document.getElementById("cartItemsContainer");
   const giftRewardText = document.getElementById("giftRewardText");
@@ -510,7 +504,7 @@ function closeCart() { document.getElementById("cartDrawer")?.classList.remove("
 document.getElementById("openCartBtn")?.addEventListener("click", openCart);
 document.getElementById("closeCartBtn")?.addEventListener("click", closeCart);
 
-/* ---------- 10. CHECKOUT DIRECTO A WHATSAPP ---------- */
+/* ---------- 10. CHECKOUT A WHATSAPP ---------- */
 document.getElementById("checkoutBtn")?.addEventListener("click", () => {
   if (cart.length === 0) return;
 
