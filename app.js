@@ -307,7 +307,6 @@ function openQuickView(productId) {
 
   document.getElementById("quickViewModal").classList.remove("hidden");
 }
-}
 
 function closeQuickView() {
   document.getElementById("quickViewModal").classList.add("hidden");
