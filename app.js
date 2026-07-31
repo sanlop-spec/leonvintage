@@ -23,7 +23,9 @@ function loadCart() {
   try {
     const raw = localStorage.getItem("tienda_leon_cart");
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function saveCart() {
@@ -121,7 +123,6 @@ function createProductCardHTML(p) {
 
       <div class="p-4 flex flex-col justify-between flex-1 gap-2">
         <div>
-          <!-- Rating Estrellas -->
           <div class="flex items-center gap-1 mb-1">
             <span class="text-gold text-xs">★</span>
             <span class="text-[10px] text-bone font-bold font-mono">${ratingVal}</span>
@@ -138,7 +139,6 @@ function createProductCardHTML(p) {
         <div>
           ${precioHTML}
           
-          <!-- Indicador de Stock / Urgencia -->
           <div class="mt-2 flex items-center justify-between text-[9px] font-mono">
             ${stockVal <= 1 
               ? '<span class="text-copper font-bold animate-pulse">🔥 ¡Última pieza disponible!</span>' 
@@ -189,8 +189,7 @@ function addToCart(productId, customPrice = null) {
   openCart();
 }
 
-/* ---------- 4. VISTA RÁPIDA (CON MEDIDAS Y ZOOM DE IMAGEN) ---------- */
-/* ---------- VISTA RÁPIDA (SOLO MOSTRAR MEDIDAS SI EXISTEN EN SUPABASE) ---------- */
+/* ---------- 4. VISTA RÁPIDA (MEDIDAS SOLO SI EXISTEN EN SUPABASE) ---------- */
 function openQuickView(productId) {
   const p = products.find(item => String(item.id) === String(productId));
   if (!p) return;
@@ -200,10 +199,10 @@ function openQuickView(productId) {
   const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
 
-  // Comprobamos si existe al menos una medida llenada en Supabase
+  // Verificar si hay medidas especificadas en Supabase
   const hasMedidas = p.medida_ancho || p.medida_largo || p.medida_manga;
 
-  // Si existen medidas, construimos la cajita HTML; si no, se queda vacía ("")
+  // Si no hay medidas, no renderizamos el bloque HTML
   const medidasHTML = hasMedidas ? `
     <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
       <div class="flex items-center justify-between text-xs font-mono">
@@ -233,7 +232,7 @@ function openQuickView(productId) {
 
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Imagen de producto con trigger para Zoom -->
+      <!-- Imagen de producto con Zoom -->
       <div class="relative group cursor-zoom-in overflow-hidden rounded-xl border border-white/10" onclick="openImageZoom('${p.imagen_url}')">
         <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover transition-transform duration-500 group-hover:scale-105">
         <div class="absolute bottom-3 right-3 bg-onyx/80 backdrop-blur-md text-gold text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-gold/30 flex items-center gap-1 shadow-lg">
@@ -259,7 +258,7 @@ function openQuickView(productId) {
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
-          <!-- SECCIÓN DE MEDIDAS (SOLO SI TIENEN VALOR EN SUPABASE) -->
+          <!-- RENDER DINÁMICO DE MEDIDAS -->
           ${medidasHTML}
 
           <!-- Métodos de Entrega y Pago -->
@@ -305,11 +304,11 @@ function openQuickView(productId) {
     ` : ''}
   `;
 
-  document.getElementById("quickViewModal").classList.remove("hidden");
+  document.getElementById("quickViewModal")?.classList.remove("hidden");
 }
 
 function closeQuickView() {
-  document.getElementById("quickViewModal").classList.add("hidden");
+  document.getElementById("quickViewModal")?.classList.add("hidden");
 }
 
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
@@ -414,8 +413,10 @@ function updateOutfitSummary() {
   const hasDiscount = selectedOutfitItems.length >= 2;
   const finalTotal = hasDiscount ? subtotal * 0.85 : subtotal;
 
-  document.getElementById("outfitTotal").textContent = `$${finalTotal.toFixed(2)}`;
-  document.getElementById("outfitDiscountNotice").classList.toggle("hidden", !hasDiscount);
+  const outfitTotalEl = document.getElementById("outfitTotal");
+  if (outfitTotalEl) outfitTotalEl.textContent = `$${finalTotal.toFixed(2)}`;
+  
+  document.getElementById("outfitDiscountNotice")?.classList.toggle("hidden", !hasDiscount);
   
   const addBtn = document.getElementById("addOutfitToCartBtn");
   if (addBtn) addBtn.disabled = selectedOutfitItems.length === 0;
@@ -432,7 +433,7 @@ document.getElementById("addOutfitToCartBtn")?.addEventListener("click", () => {
     }
   });
   selectedOutfitItems = [];
-  document.getElementById("outfitModal").classList.add("hidden");
+  document.getElementById("outfitModal")?.classList.add("hidden");
 });
 
 /* ---------- 8. ANUNCIOS ROTATIVOS TOP ---------- */
@@ -458,11 +459,11 @@ setInterval(() => {
 
 /* ---------- 9. LISTENERS Y EVENTOS ---------- */
 document.getElementById("openOutfitBuilderBtn")?.addEventListener("click", () => {
-  document.getElementById("outfitModal").classList.remove("hidden");
+  document.getElementById("outfitModal")?.classList.remove("hidden");
 });
 
 document.getElementById("closeOutfitBtn")?.addEventListener("click", () => {
-  document.getElementById("outfitModal").classList.add("hidden");
+  document.getElementById("outfitModal")?.classList.add("hidden");
 });
 
 document.querySelectorAll("#categoryFilters .cat-btn").forEach(btn => {
