@@ -1,5 +1,5 @@
 /* ============================================
-   LEÓN VINTAGE — app.js (SISTEMA CON MEJORAS AMAZON/ML)
+   LEÓN VINTAGE — app.js (CÓDIGO COMPLETO)
    ============================================ */
 
 const SUPABASE_URL = "https://gfdtualoijutbvozhasv.supabase.co";
@@ -42,7 +42,7 @@ function updateCartBadges() {
 async function loadProducts() {
   const { data, error } = await supabaseClient
     .from(TABLE_NAME)
-    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria, condicion, stock, rating")
+    .select("id, titulo, imagen_url, tallas, detalles, precio, precio_oferta, categoria, condicion, stock, rating, medida_ancho, medida_largo, medida_manga")
     .order("id", { ascending: false });
 
   if (!error && data) {
@@ -52,7 +52,7 @@ async function loadProducts() {
   }
 }
 
-/* ---------- 3. FILTRADO Y RENDER DE TARJETAS estilo Mercado Libre ---------- */
+/* ---------- 3. FILTRADO Y RENDER DE TARJETAS ---------- */
 function applyFiltersAndRender() {
   const grid = document.getElementById("productGrid");
   if (!grid) return;
@@ -189,7 +189,7 @@ function addToCart(productId, customPrice = null) {
   openCart();
 }
 
-/* ---------- 4. VISTA RÁPIDA (CON FAQ Y PRODUCTOS RECOMENDADOS) ---------- */
+/* ---------- 4. VISTA RÁPIDA (CON MEDIDAS Y ZOOM DE IMAGEN) ---------- */
 function openQuickView(productId) {
   const p = products.find(item => String(item.id) === String(productId));
   if (!p) return;
@@ -199,12 +199,22 @@ function openQuickView(productId) {
   const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
 
-  // Productos relacionados (Misma categoría o estilo)
+  // Medidas en cm (si existen en DB, o valores estándar de referencia)
+  const ancho = p.medida_ancho || "54 cm";
+  const largo = p.medida_largo || "68 cm";
+  const manga = p.medida_manga || "60 cm";
+
   const related = products.filter(item => String(item.id) !== String(p.id)).slice(0, 2);
 
   content.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover rounded-xl border border-white/10">
+      <!-- Imagen de producto con trigger para Zoom -->
+      <div class="relative group cursor-zoom-in overflow-hidden rounded-xl border border-white/10" onclick="openImageZoom('${p.imagen_url}')">
+        <img src="${p.imagen_url}" class="w-full aspect-[3/4] object-cover transition-transform duration-500 group-hover:scale-105">
+        <div class="absolute bottom-3 right-3 bg-onyx/80 backdrop-blur-md text-gold text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-gold/30 flex items-center gap-1 shadow-lg">
+          🔍 Clic para ampliar foto
+        </div>
+      </div>
       
       <div class="flex flex-col justify-between space-y-4">
         <div>
@@ -224,20 +234,41 @@ function openQuickView(productId) {
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
-          <!-- Métodos de Entrega y Pago en Modal -->
+          <!-- SECCIÓN DE MEDIDAS EXACTAS EN CM -->
+          <div class="my-3 p-3 bg-white/[0.03] border border-gold/20 rounded-xl space-y-2">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-gold font-bold flex items-center gap-1">📏 Medidas Exactas (Plano de prenda):</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center text-[10px] font-mono pt-1">
+              <div class="bg-onyx p-1.5 rounded border border-white/5">
+                <span class="text-muted block">Ancho (Axila-Axila)</span>
+                <span class="text-bone font-bold">${ancho}</span>
+              </div>
+              <div class="bg-onyx p-1.5 rounded border border-white/5">
+                <span class="text-muted block">Largo (Hombro-Base)</span>
+                <span class="text-bone font-bold">${largo}</span>
+              </div>
+              <div class="bg-onyx p-1.5 rounded border border-white/5">
+                <span class="text-muted block">Manga / Caída</span>
+                <span class="text-bone font-bold">${manga}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Métodos de Entrega y Pago -->
           <div class="bg-white/5 border border-white/10 rounded-lg p-3 my-3 text-[11px] font-mono space-y-1">
             <p class="text-bone">📍 <strong class="text-gold">Entrega Personal:</strong> Punto medio acordado vía WhatsApp.</p>
             <p class="text-bone">💳 <strong class="text-gold">Pagos:</strong> Efectivo al momento o Transferencia SPEI.</p>
           </div>
 
-          <!-- Acordeón FAQ Mercado Libre Style -->
-          <div class="space-y-2 mt-4 text-[11px] font-mono">
+          <!-- FAQ Acordeón -->
+          <div class="space-y-2 my-2 text-[11px] font-mono">
             <details class="bg-white/[0.02] border border-white/10 rounded-lg p-2 cursor-pointer">
               <summary class="font-bold text-bone flex justify-between">
-                <span>¿Cómo aseguro mi talla?</span>
+                <span>¿Cómo confirmo la entrega?</span>
                 <span class="text-gold">+</span>
               </summary>
-              <p class="text-muted mt-2 text-[10px]">Al coordinar por WhatsApp podemos pasarte las medidas exactas en cm de hombros y largo.</p>
+              <p class="text-muted mt-2 text-[10px]">Al hacer clic en "Acordar Entrega", te abre un chat directo de WhatsApp con la prenda elegida para acordar día, hora y lugar céntrico.</p>
             </details>
           </div>
         </div>
@@ -248,7 +279,7 @@ function openQuickView(productId) {
       </div>
     </div>
 
-    <!-- Sección Quienes vieron esto también vieron -->
+    <!-- Prendas Similares -->
     ${related.length > 0 ? `
       <div class="border-t border-white/10 mt-6 pt-4">
         <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Prendas Similares</h4>
@@ -276,7 +307,27 @@ function closeQuickView() {
 
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
 
-/* ---------- 5. RENDER DEL CARRITO ---------- */
+/* ---------- 5. CONTROL DEL MODAL DE ZOOM / PANTALLA COMPLETA ---------- */
+function openImageZoom(imgUrl) {
+  const modal = document.getElementById("imageZoomModal");
+  const img = document.getElementById("zoomedImage");
+  if (!modal || !img) return;
+
+  img.src = imgUrl;
+  modal.classList.remove("hidden");
+}
+
+function closeImageZoom() {
+  document.getElementById("imageZoomModal")?.classList.add("hidden");
+}
+
+document.getElementById("imageZoomModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "imageZoomModal" || e.target.id === "closeZoomBtn") {
+    closeImageZoom();
+  }
+});
+
+/* ---------- 6. RENDER DEL CARRITO DE COMPRAS ---------- */
 function renderCart() {
   const container = document.getElementById("cartItemsContainer");
   const giftRewardText = document.getElementById("giftRewardText");
@@ -318,7 +369,7 @@ function removeItem(index) {
   saveCart();
 }
 
-/* ---------- 6. CREADOR DE OUTFITS ---------- */
+/* ---------- 7. CREADOR DE OUTFITS ---------- */
 function setupOutfitBuilder() {
   const grid = document.getElementById("outfitSelectionGrid");
   if (!grid) return;
@@ -377,7 +428,7 @@ document.getElementById("addOutfitToCartBtn")?.addEventListener("click", () => {
   document.getElementById("outfitModal").classList.add("hidden");
 });
 
-/* ---------- 7. ANUNCIOS ROTATIVOS TOP ---------- */
+/* ---------- 8. ANUNCIOS ROTATIVOS TOP ---------- */
 const tickerMessages = [
   "✨ 15% OFF automático en tu paquete al crear un Outfit de 2+ prendas",
   "🎁 Lleva 2 o más prendas y recibe un accesorio de regalo en tu compra",
@@ -398,7 +449,7 @@ setInterval(() => {
   }
 }, 4500);
 
-/* ---------- 8. LISTENERS Y CONTROLES ---------- */
+/* ---------- 9. LISTENERS Y EVENTOS ---------- */
 document.getElementById("openOutfitBuilderBtn")?.addEventListener("click", () => {
   document.getElementById("outfitModal").classList.remove("hidden");
 });
@@ -451,7 +502,7 @@ function closeCart() { document.getElementById("cartDrawer")?.classList.remove("
 document.getElementById("openCartBtn")?.addEventListener("click", openCart);
 document.getElementById("closeCartBtn")?.addEventListener("click", closeCart);
 
-/* ---------- 9. CHECKOUT DIRECTO A WHATSAPP ---------- */
+/* ---------- 10. CHECKOUT DIRECTO A WHATSAPP ---------- */
 document.getElementById("checkoutBtn")?.addEventListener("click", () => {
   if (cart.length === 0) return;
 
