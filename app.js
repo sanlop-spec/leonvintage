@@ -68,7 +68,7 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(p => (p.categoria || "").toLowerCase() === currentCategory.toLowerCase());
   }
 
-  // Talla
+  // Talla (solo aplica si la categoría no es 'latas')
   if (currentSize !== "all") {
     filtered = filtered.filter(p => {
       const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(",") : (p.tallas || "");
@@ -92,7 +92,7 @@ function applyFiltersAndRender() {
   }
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<p class="col-span-full text-center text-muted font-mono text-xs py-10">No se encontraron prendas con los filtros seleccionados.</p>`;
+    grid.innerHTML = `<p class="col-span-full text-center text-muted font-mono text-xs py-10">No se encontraron productos con los filtros seleccionados.</p>`;
     return;
   }
 
@@ -101,8 +101,9 @@ function applyFiltersAndRender() {
 }
 
 function createProductCardHTML(p) {
-  const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
-  const condicionTexto = p.condicion ? p.condicion : "Condición: 9/10";
+  const isLata = (p.categoria || "").toLowerCase() === "latas";
+  const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "N/A");
+  const condicionTexto = p.condicion ? p.condicion : (isLata ? "Coleccionable" : "Condición: 9/10");
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
   const stockVal = p.stock !== undefined && p.stock !== null ? p.stock : 1;
 
@@ -126,12 +127,12 @@ function createProductCardHTML(p) {
           <div class="flex items-center gap-1 mb-1">
             <span class="text-gold text-xs">★</span>
             <span class="text-[10px] text-bone font-bold font-mono">${ratingVal}</span>
-            <span class="text-[9px] text-muted font-mono">(Pieza Original)</span>
+            <span class="text-[9px] text-muted font-mono">${isLata ? "(Colección)" : "(Pieza Original)"}</span>
           </div>
 
           <div class="flex justify-between items-start gap-2">
             <h3 class="font-display font-bold text-sm text-bone cursor-pointer quick-view-trigger" data-id="${p.id}">${p.titulo || "Producto"}</h3>
-            <span class="text-[10px] font-mono text-muted border border-white/10 px-1.5 py-0.5 rounded shrink-0">Talla: ${tallasStr}</span>
+            ${!isLata ? `<span class="text-[10px] font-mono text-muted border border-white/10 px-1.5 py-0.5 rounded shrink-0">Talla: ${tallasStr}</span>` : ''}
           </div>
           <p class="text-[11px] text-muted line-clamp-2 mt-1">${p.detalles || ""}</p>
         </div>
@@ -183,6 +184,7 @@ function addToCart(productId, customPrice = null) {
     titulo: product.titulo,
     imagen_url: product.imagen_url,
     precio: finalPrice,
+    categoria: product.categoria,
     cantidad: 1
   });
   saveCart();
@@ -197,11 +199,12 @@ function openQuickView(productId) {
   const content = document.getElementById("quickViewContent");
   if (!content) return;
 
-  const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "Única");
-  const condicionTexto = p.condicion ? p.condicion : "9/10 (Excelente estado vintage)";
+  const isLata = (p.categoria || "").toLowerCase() === "latas";
+  const tallasStr = Array.isArray(p.tallas) ? p.tallas.join(", ") : (p.tallas || "N/A");
+  const condicionTexto = p.condicion ? p.condicion : (isLata ? "Excelente estado de conservación" : "9/10 (Excelente estado vintage)");
   const ratingVal = p.rating ? Number(p.rating).toFixed(1) : "5.0";
 
-  const hasMedidas = p.medida_ancho || p.medida_largo || p.medida_manga;
+  const hasMedidas = !isLata && (p.medida_ancho || p.medida_largo || p.medida_manga);
 
   let medidasHTML = "";
   if (hasMedidas) {
@@ -239,7 +242,7 @@ function openQuickView(productId) {
 
     relatedHTML = `
       <div class="border-t border-white/10 mt-6 pt-4">
-        <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Prendas Similares</h4>
+        <h4 class="font-display text-xs text-gold uppercase tracking-wider mb-3">Productos Similares</h4>
         <div class="grid grid-cols-2 gap-3">${items}</div>
       </div>
     `;
@@ -257,18 +260,16 @@ function openQuickView(productId) {
       <div class="flex flex-col justify-between space-y-4">
         <div>
           <div class="flex items-center justify-between mb-1">
-            <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest">Prenda Exclusiva</span>
+            <span class="text-[10px] font-mono uppercase text-copper font-bold tracking-widest">${isLata ? "Lata Coleccionable" : "Prenda Exclusiva"}</span>
             <span class="text-[10px] font-mono text-gold bg-gold/10 px-2 py-0.5 rounded border border-gold/30">★ ${ratingVal} Excelente</span>
           </div>
 
           <h2 class="font-display font-bold text-xl text-bone mb-2">${p.titulo}</h2>
           <span class="text-gold font-mono font-bold text-xl block mb-2">$${p.precio_oferta || p.precio || 0}</span>
           
-          <p class="text-[10px] text-muted font-mono mb-4">👀 2 personas están interesadas en esta prenda en este momento.</p>
-
           <div class="space-y-2 border-t border-b border-white/10 py-3 text-xs text-muted font-mono">
             <p><strong class="text-bone">Detalles:</strong> ${p.detalles || "Sin descripción adicional."}</p>
-            <p><strong class="text-bone">Talla de etiqueta:</strong> ${tallasStr}</p>
+            ${!isLata ? `<p><strong class="text-bone">Talla de etiqueta:</strong> ${tallasStr}</p>` : ''}
             <p><strong class="text-bone">Estado / Condición:</strong> ${condicionTexto}</p>
           </div>
 
@@ -277,16 +278,6 @@ function openQuickView(productId) {
           <div class="bg-white/5 border border-white/10 rounded-lg p-3 my-3 text-[11px] font-mono space-y-1">
             <p class="text-bone">📍 <strong class="text-gold">Entrega Personal:</strong> Punto medio acordado vía WhatsApp.</p>
             <p class="text-bone">💳 <strong class="text-gold">Pagos:</strong> Efectivo al momento o Transferencia SPEI.</p>
-          </div>
-
-          <div class="space-y-2 my-2 text-[11px] font-mono">
-            <details class="bg-white/[0.02] border border-white/10 rounded-lg p-2 cursor-pointer">
-              <summary class="font-bold text-bone flex justify-between">
-                <span>¿Cómo confirmo la entrega?</span>
-                <span class="text-gold">+</span>
-              </summary>
-              <p class="text-muted mt-2 text-[10px]">Al hacer clic en "Acordar Entrega", te abre un chat directo de WhatsApp con la prenda elegida para acordar día, hora y lugar céntrico.</p>
-            </details>
           </div>
         </div>
 
@@ -307,12 +298,10 @@ function closeQuickView() {
 
 document.getElementById("closeQuickViewBtn")?.addEventListener("click", closeQuickView);
 
-/* ---------- 5. MODAL DE ZOOM DE IMAGEN ---------- */
 /* ---------- 5. MODAL DE ZOOM DE IMAGEN (PANTALLA COMPLETA) ---------- */
 function openImageZoom(imgUrl) {
   let modal = document.getElementById("imageZoomModal");
   
-  // Si no existe el elemento en el HTML, lo creamos dinámicamente sobre la marcha
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "imageZoomModal";
@@ -336,14 +325,14 @@ function openImageZoom(imgUrl) {
   if (img) img.src = imgUrl;
 
   modal.classList.remove("hidden");
-  document.body.style.overflow = "hidden"; // Evita que la página del fondo haga scroll
+  document.body.style.overflow = "hidden";
 }
 
 function closeImageZoom() {
   const modal = document.getElementById("imageZoomModal");
   if (modal) {
     modal.classList.add("hidden");
-    document.body.style.overflow = "auto"; // Devuelve el scroll normal
+    document.body.style.overflow = "auto";
   }
 }
 
@@ -358,7 +347,7 @@ function renderCart() {
       giftRewardText.textContent = "🎉 ¡Felicidades! Se incluirá un obsequio exclusivo en tu paquete.";
       giftRewardText.className = "font-mono text-xs text-emerald-400 font-bold";
     } else {
-      giftRewardText.textContent = `🎁 Agrega ${2 - totalItems} prenda más para recibir un accesorio de regalo.`;
+      giftRewardText.textContent = `🎁 Agrega ${2 - totalItems} producto más para recibir un accesorio de regalo.`;
       giftRewardText.className = "font-mono text-xs text-copper font-semibold";
     }
   }
@@ -389,12 +378,15 @@ function removeItem(index) {
   saveCart();
 }
 
-/* ---------- 7. CREADOR DE OUTFITS ---------- */
+/* ---------- 7. CREADOR DE OUTFITS (EXCLUYE LATAS) ---------- */
 function setupOutfitBuilder() {
   const grid = document.getElementById("outfitSelectionGrid");
   if (!grid) return;
 
-  grid.innerHTML = products.map(p => `
+  // Filtrar para mostrar en el Outfit Builder solo ropa (excluir latas)
+  const clothesOnly = products.filter(p => (p.categoria || "").toLowerCase() !== "latas");
+
+  grid.innerHTML = clothesOnly.map(p => `
     <div class="outfit-card border border-white/10 rounded-lg p-2 cursor-pointer transition-all hover:border-gold bg-white/5" data-id="${p.id}">
       <img src="${p.imagen_url}" class="w-full h-20 object-cover rounded mb-1">
       <p class="font-display text-[10px] text-bone truncate">${p.titulo}</p>
@@ -418,14 +410,23 @@ function setupOutfitBuilder() {
 }
 
 function updateOutfitSummary() {
-  let subtotal = 0;
+  let subtotalRopa = 0;
+  let countRopa = 0;
+
   selectedOutfitItems.forEach(id => {
     const p = products.find(prod => String(prod.id) === String(id));
-    if (p) subtotal += Number(p.precio_oferta || p.precio || 0);
+    if (p) {
+      const isLata = (p.categoria || "").toLowerCase() === "latas";
+      if (!isLata) {
+        subtotalRopa += Number(p.precio_oferta || p.precio || 0);
+        countRopa++;
+      }
+    }
   });
 
-  const hasDiscount = selectedOutfitItems.length >= 2;
-  const finalTotal = hasDiscount ? subtotal * 0.85 : subtotal;
+  // El 15% de descuento solo se aplica si hay 2 o más prendas de ropa
+  const hasDiscount = countRopa >= 2;
+  const finalTotal = hasDiscount ? subtotalRopa * 0.85 : subtotalRopa;
 
   const outfitTotalEl = document.getElementById("outfitTotal");
   if (outfitTotalEl) outfitTotalEl.textContent = `$${finalTotal.toFixed(2)}`;
@@ -437,25 +438,38 @@ function updateOutfitSummary() {
 }
 
 document.getElementById("addOutfitToCartBtn")?.addEventListener("click", () => {
-  const hasDiscount = selectedOutfitItems.length >= 2;
+  let countRopa = 0;
+  selectedOutfitItems.forEach(id => {
+    const p = products.find(prod => String(prod.id) === String(id));
+    if (p && (p.categoria || "").toLowerCase() !== "latas") {
+      countRopa++;
+    }
+  });
+
+  const hasDiscount = countRopa >= 2;
+
   selectedOutfitItems.forEach(id => {
     const p = products.find(prod => String(prod.id) === String(id));
     if (p) {
+      const isLata = (p.categoria || "").toLowerCase() === "latas";
       const basePrice = p.precio_oferta || p.precio || 0;
-      const price = hasDiscount ? basePrice * 0.85 : basePrice;
+      
+      // Aplicar descuento de outfit solo a prendas de ropa
+      const price = (!isLata && hasDiscount) ? basePrice * 0.85 : basePrice;
       addToCart(p.id, price.toFixed(2));
     }
   });
+
   selectedOutfitItems = [];
   document.getElementById("outfitModal")?.classList.add("hidden");
 });
 
 /* ---------- 8. ANUNCIOS ROTATIVOS TOP ---------- */
 const tickerMessages = [
-  "✨ 15% OFF automático en tu paquete al crear un Outfit de 2+ prendas",
-  "🎁 Lleva 2 o más prendas y recibe un accesorio de regalo en tu compra",
-  "📍 Entregas personales en punto medio o pago en efectivo/transferencia",
-  "🔥 Piezas únicas de colección seleccionadas a detalle"
+  "✨ 15% OFF automático al armar tu Outfit con 2+ prendas de ropa",
+  "🥫 Seccíon de Latas de Colección disponible",
+  "🎁 Lleva 2 o más productos y recibe un accesorio de regalo",
+  "📍 Entregas personales en punto medio o pago en efectivo/transferencia"
 ];
 
 let currentTickerIndex = 0;
